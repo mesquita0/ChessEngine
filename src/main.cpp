@@ -64,6 +64,11 @@ int main() {
 			while (true) {
 				std::string move_str;
 				std::cin >> move_str;
+				if (move_str.length() != 4) {
+					cout << "Move is not valid, please enter a valid move.\n\n";
+					continue;
+				}
+
 				location start_square = notationSquareToLocation(move_str.substr(0, 2));
 				location final_square = notationSquareToLocation(move_str.substr(2, 2));
 				move = moves.isMoveValid(start_square, final_square);
@@ -90,7 +95,7 @@ int main() {
 		short capture_flag = makeMove(move, *player, *opponent, magic_bitboards).capture_flag;
 
 		unsigned short move_flag = (move & 0xf000);
-		if (capture_flag != no_capture && move_flag != pawn_move && move_flag != pawn_move_two_squares) { // If no capture or pawn moves
+		if (capture_flag == no_capture && move_flag != pawn_move && move_flag != pawn_move_two_squares) { // If no capture or pawn moves
 			half_moves++;
 
 			if (move_flag == castle_king_side || move_flag == castle_queen_side) {	
@@ -138,6 +143,7 @@ int main() {
 				}
 			}
 		}
+		if (game_outcome != ongoing) break;
 
 		// Draws by insufficient material
 		Player* player_with_only_king = nullptr;
@@ -176,6 +182,7 @@ int main() {
 				break;
 			}
 		}
+		if (game_outcome != ongoing) break;
 
 		// Swap turn and generate moves for player
 		Player* tmp = player;

@@ -70,6 +70,12 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)tests\PerftTest\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)tests\PerftTest\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -104,14 +110,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>Position.obj;Locations.obj;Player.obj;BitBoards.obj;Moves.obj;MagicBitboards.obj;Perft.obj;MakeMoves.obj;Serializer.obj;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\Generate Magic Bitboards\x64\Debug;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\x64\Debug;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\Generate Magic Bitboards\x64\Debug;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\x64\Debug;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -122,7 +128,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -131,7 +137,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>Position.obj;Locations.obj;Player.obj;BitBoards.obj;Moves.obj;MagicBitboards.obj;Perft.obj;MakeMoves.obj;Serializer.obj;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\Generate Magic Bitboards\x64\Release;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\x64\Release;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\x64\Release;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\Generate Magic Bitboards\x64\Release;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <Profile>false</Profile>
     </Link>
   </ItemDefinitionGroup>
@@ -139,7 +145,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ChessEngine.vcxproj">
+    <ProjectReference Include="..\..\src\ChessEngine.vcxproj">
       <Project>{5cd1a975-7bed-4ed5-babd-c39f4a1da888}</Project>
     </ProjectReference>
   </ItemGroup>

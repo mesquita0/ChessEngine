@@ -1,7 +1,0 @@
-Fix path in serializer.cpp
-Lookup bitboard for pawn attacks.
-Try to remove squares to uncheck lookup if cache misses become a problem, since it has 64kb and makes the move generation only 2% faster.
-Draws.
-Signed char for locations, invalid locations as negative.
-Get user pieces color.
-Typedef bitboard (ull) and move (us)

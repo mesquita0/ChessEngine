@@ -36,7 +36,12 @@ bool storeMagics(std::array<Square, 64>& squares_bishops, std::array<Square, 64>
 	SaveFile save_file(squares_bishops, squares_rooks, attacks_array);
 
 	std::ofstream out_file;
-	out_file.open("magic_numbers", std::ios::binary);
+
+	// Get file's directory
+	std::string file_path = __FILE__;
+	std::string dir_path = file_path.substr(0, file_path.rfind("\\"));
+
+	out_file.open(dir_path + "\\magic_numbers.bin", std::ios::binary);
 	if (!out_file) return false;
 
 	cereal::BinaryOutputArchive oarchive(out_file);
@@ -48,7 +53,12 @@ bool storeMagics(std::array<Square, 64>& squares_bishops, std::array<Square, 64>
 SaveFile loadMagics() {
 	SaveFile save_file;
 	std::ifstream in_file;
-	in_file.open("C:\\Users\\mesqu\\OneDrive\\Documentos\\Estudo\\Projetos\\ChessEngine\\Generate Magic Bitboards\\magic_numbers", std::ios::binary);
+
+	// Get file's directory
+	std::string file_path = __FILE__;
+	std::string dir_path = file_path.substr(0, file_path.rfind("\\"));
+
+	in_file.open(dir_path + "\\magic_numbers.bin", std::ios::binary);
 	if (!in_file.is_open()) return save_file;
 
 	cereal::BinaryInputArchive iarchive(in_file);

@@ -10,6 +10,7 @@
 #include <vector>
 #include <sstream>
 #include <tuple>
+#include "Windows.h"
 
 int main() {
 	int start_depth = 1;
@@ -24,7 +25,12 @@ int main() {
 
 	// Perft test suit positions from http://www.rocechess.ch/perft.html
 	std::ifstream in_file;
-	in_file.open("C:\\Users\\mesqu\\OneDrive\\Documentos\\Estudo\\Projetos\\ChessEngine\\UnitTest\\perftsuite.epd");
+
+	// Get file's directory
+	std::string file_path = __FILE__;
+	std::string dir_path = file_path.substr(0, file_path.rfind("\\"));
+
+	in_file.open(dir_path + "\\perftsuite.epd");
 	if (!in_file.is_open()) return -2;
 
 	std::string line;

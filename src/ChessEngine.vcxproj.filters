@@ -82,7 +82,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Todo.txt">
+    <Text Include="..\Todo.txt">
       <Filter>Resource Files</Filter>
     </Text>
   </ItemGroup>
