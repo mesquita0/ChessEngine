@@ -5,6 +5,7 @@
 #include "Position.h"
 #include "Moves.h"
 #include "MagicBitboards.h"
+#include "Zobrist.h"
 #include <array>
 #include <fstream>
 #include <vector>
@@ -96,6 +97,8 @@ namespace UnitTest
 			bool loaded = magic_bitboards.loadMagicBitboards();
 			Assert::IsTrue(loaded);
 
+			ZobristKeys zobrist_keys = ZobristKeys();
+
 			// Perft test suit positions from http://www.rocechess.ch/perft.html
 			std::ifstream in_file;
 
@@ -121,7 +124,7 @@ namespace UnitTest
 
 				for (int depth = start_depth; depth <= max_depth; depth++) {
 					unsigned long long expected_num_nodes = std::stoull(perft[depth].substr(3));
-					Assert::AreEqual(expected_num_nodes, Perft(depth, player, opponent, magic_bitboards));
+					Assert::AreEqual(expected_num_nodes, Perft(depth, player, opponent, magic_bitboards, zobrist_keys));
 				}
 			}
 		}

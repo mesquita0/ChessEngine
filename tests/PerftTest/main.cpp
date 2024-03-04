@@ -3,6 +3,7 @@
 #include "Position.h"
 #include "Moves.h"
 #include "MagicBitboards.h"
+#include "Zobrist.h"
 #include <array>
 #include <chrono>
 #include <fstream>
@@ -10,7 +11,6 @@
 #include <vector>
 #include <sstream>
 #include <tuple>
-#include "Windows.h"
 
 int main() {
 	int start_depth = 1;
@@ -22,6 +22,8 @@ int main() {
 	MagicBitboards magic_bitboards;
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) return -1;
+
+	ZobristKeys zobrist_keys = ZobristKeys();
 
 	// Perft test suit positions from http://www.rocechess.ch/perft.html
 	std::ifstream in_file;
@@ -52,7 +54,7 @@ int main() {
 			unsigned long long expected_num_nodes = std::stoull(perft[depth].substr(3));
 
 			auto start = std::chrono::high_resolution_clock::now();
-			unsigned long long num_nodes = Perft(depth, player, opponent, magic_bitboards);
+			unsigned long long num_nodes = Perft(depth, player, opponent, magic_bitboards, zobrist_keys);
 			auto stop = std::chrono::high_resolution_clock::now();
 
 			if (expected_num_nodes == num_nodes) {

@@ -5,11 +5,12 @@
 #include "Locations.h"
 #include "Player.h"
 #include "Position.h"
+#include "Zobrist.h"
 #include <iostream>
 
-static unsigned long long Perftr(int depth, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, Moves& moves);
+static unsigned long long Perftr(int depth, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, Moves& moves, const ZobristKeys& zobrist_keys);
 
-unsigned long long Perft(int depth, Player& player, Player& opponent, const MagicBitboards& magic_bitboards) {
+unsigned long long Perft(int depth, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
 	/*
 	Perftr won't revert back changes in attacks and squares_to_uncheck bitboards, which is problematic if it
 	is called multiples times on the same position, since it won't leave the position as it was before, this
@@ -21,7 +22,7 @@ unsigned long long Perft(int depth, Player& player, Player& opponent, const Magi
 	unsigned long long attacks = opponent.bitboards.attacks;
 	unsigned long long squares_to_uncheck = player.bitboards.squares_to_uncheck;
 
-	unsigned long long results = Perftr(depth, player, opponent, magic_bitboards, moves);
+	unsigned long long results = Perftr(depth, player, opponent, magic_bitboards, moves, zobrist_keys);
 
 	opponent.bitboards.attacks = attacks;
 	player.bitboards.squares_to_uncheck = squares_to_uncheck;
@@ -29,7 +30,7 @@ unsigned long long Perft(int depth, Player& player, Player& opponent, const Magi
 	return results;
 }
 
-static unsigned long long Perftr(int depth, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, Moves& moves) {
+static unsigned long long Perftr(int depth, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, Moves& moves, const ZobristKeys& zobrist_keys) {
 	if (depth == 0) return 1;
 	
 	moves.generateMoves(player, opponent, magic_bitboards);
@@ -54,8 +55,8 @@ static unsigned long long Perftr(int depth, Player& player, Player& opponent, co
 			are alredy computed.
 		*/
 
-		MoveInfo move_info = makeMove(move, player, opponent, magic_bitboards);
-		nodes += Perftr(depth - 1, opponent, player, magic_bitboards, new_moves);
+		MoveInfo move_info = makeMove(move, player, opponent, 0, magic_bitboards, zobrist_keys);
+		nodes += Perftr(depth - 1, opponent, player, magic_bitboards, new_moves, zobrist_keys);
 		unmakeMove(move, player, opponent, opponent_en_passant_target, player_can_castle_king_side, player_can_castle_queen_side,
 				   opponent_can_castle_king_side, opponent_can_castle_queen_side, move_info, magic_bitboards);
 	}
@@ -63,7 +64,7 @@ static unsigned long long Perftr(int depth, Player& player, Player& opponent, co
 	return nodes;
 }
 
-unsigned long long PerftDivide(int depth, Player& player, Player& opponent, const MagicBitboards& magic_bitboards) {
+unsigned long long PerftDivide(int depth, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
 	unsigned long long nodes = 0;
 
 	unsigned long long attacks = opponent.bitboards.attacks;
@@ -81,8 +82,8 @@ unsigned long long PerftDivide(int depth, Player& player, Player& opponent, cons
 		bool opponent_can_castle_queen_side = opponent.can_castle_queen_side;
 
 		std::cout << locationToNotationSquare((move >> 6) & 0x3f) << locationToNotationSquare(move & 0x3f);
-		MoveInfo move_info = makeMove(move, player, opponent, magic_bitboards);
-		unsigned long long nodes_move = Perft(depth - 1, opponent, player, magic_bitboards);
+		MoveInfo move_info = makeMove(move, player, opponent, 0, magic_bitboards, zobrist_keys);
+		unsigned long long nodes_move = Perft(depth - 1, opponent, player, magic_bitboards, zobrist_keys);
 		nodes += nodes_move;
 		std::cout << ": " << nodes_move << '\n';
 		unmakeMove(move, player, opponent, opponent_en_passant_target, player_can_castle_king_side, player_can_castle_queen_side,

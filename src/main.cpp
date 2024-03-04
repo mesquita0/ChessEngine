@@ -44,10 +44,12 @@ int main() {
 	Player* player = &first_to_move;
 	Player* opponent = &second_to_move;
 
-	// TODO: get user pieces color
-	bool is_engine_turn;
+	// Get user's pieces color
+	bool is_engine_turn, is_engine_white;
 	cout << "Enter 0 to play as white and 1 to play as black: ";
-	std::cin >> is_engine_turn;
+	std::cin >> is_engine_white;
+	if ((!is_engine_white && !player->is_white) || (is_engine_white && player->is_white)) is_engine_turn = true;
+	else is_engine_turn = false;
 
 	GameOutcome game_outcome = ongoing;
 	Moves moves;
@@ -92,7 +94,9 @@ int main() {
 			is_engine_turn = false;
 		}
 
-		short capture_flag = makeMove(move, *player, *opponent, magic_bitboards).capture_flag;
+		auto [capture_flag, new_hash] = makeMove(move, *player, *opponent, hash, magic_bitboards, zobrist_keys);
+		positions.push_back(new_hash);
+		hash = new_hash;
 
 		unsigned short move_flag = (move & 0xf000);
 		if (capture_flag == no_capture && move_flag != pawn_move && move_flag != pawn_move_two_squares) { // If no capture or pawn moves
@@ -106,10 +110,6 @@ int main() {
 			half_moves = 0;
 			positions.clear();
 		}
-		
-		// Add new hash to positons
-		hash = zobrist_keys.makeMove(hash, move);
-		positions.push_back(hash);
 
 		if (!player->is_white) full_moves++;
 
