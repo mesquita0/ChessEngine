@@ -14,6 +14,13 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 	location initial_square_rook_queen_side = player.is_white ? 0 : 56;
 	short capture_type = no_capture;
 
+	// Save previous state
+	location opponent_en_passant_target = opponent.locations.en_passant_target;
+	bool player_could_castle_king_side = player.can_castle_king_side;
+	bool player_could_castle_queen_side = player.can_castle_queen_side;
+	bool opponent_could_castle_king_side = opponent.can_castle_king_side;
+	bool opponent_could_castle_queen_side = opponent.can_castle_queen_side;
+
 	// Reset en passant target
 	if (opponent.locations.en_passant_target != 0) {
 		hash ^= zobrist_keys.en_passant_file[opponent.locations.en_passant_target % 8];
@@ -420,12 +427,10 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 	opponent.move_id++;
 	setPins(opponent, player, magic_bitboards);
 
-	return { capture_type, hash };
+	return { player_could_castle_king_side, player_could_castle_queen_side, opponent_could_castle_king_side, opponent_could_castle_queen_side, opponent_en_passant_target, capture_type, hash };
 }
 
-void unmakeMove(const unsigned short move, Player& player, Player& opponent, location opponent_en_passant_target,
-	bool player_can_castle_king_side, bool player_can_castle_queen_side, bool opponent_can_castle_king_side,
-	bool opponent_can_castle_queen_side, const MoveInfo& move_info, const MagicBitboards& magic_bitboards) {
+void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info, const MagicBitboards& magic_bitboards) {
 	unsigned short flag = move & flag_mask;
 	location start_square = (move >> 6) & location_mask;
 	location final_square = move & location_mask;
@@ -433,11 +438,11 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, loc
 	location initial_square_rook_queen_side = player.is_white ? 0 : 56;
 	short capture_type = move_info.capture_flag;
 
-	opponent.locations.en_passant_target = opponent_en_passant_target;
-	player.can_castle_king_side = player_can_castle_king_side;
-	player.can_castle_queen_side = player_can_castle_queen_side;
-	opponent.can_castle_king_side = opponent_can_castle_king_side;
-	opponent.can_castle_queen_side = opponent_can_castle_queen_side;
+	opponent.locations.en_passant_target = move_info.opponent_en_passant_target;
+	player.can_castle_king_side = move_info.player_could_castle_king_side;
+	player.can_castle_queen_side = move_info.player_could_castle_queen_side;
+	opponent.can_castle_king_side = move_info.opponent_could_castle_king_side;
+	opponent.can_castle_queen_side = move_info.opponent_could_castle_queen_side;
 
 	// Add start square to bitboards and update locations
 	location location_en_passant_pawn;

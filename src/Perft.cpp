@@ -42,13 +42,6 @@ static unsigned long long Perftr(int depth, Player& player, Player& opponent, co
 	unsigned long long nodes = 0;
 
 	for (const unsigned short move : moves) {
-
-		location opponent_en_passant_target = opponent.locations.en_passant_target;
-		bool player_can_castle_king_side = player.can_castle_king_side;
-		bool player_can_castle_queen_side = player.can_castle_queen_side;
-		bool opponent_can_castle_king_side = opponent.can_castle_king_side;
-		bool opponent_can_castle_queen_side = opponent.can_castle_queen_side;
-
 		/*
 			unmake move does not reverse changes in attacks / squares to uncheck bitboards, since they are going to 
 			be recomputed when the next move is made (since the board will change), and the moves for the current position
@@ -57,8 +50,7 @@ static unsigned long long Perftr(int depth, Player& player, Player& opponent, co
 
 		MoveInfo move_info = makeMove(move, player, opponent, 0, magic_bitboards, zobrist_keys);
 		nodes += Perftr(depth - 1, opponent, player, magic_bitboards, new_moves, zobrist_keys);
-		unmakeMove(move, player, opponent, opponent_en_passant_target, player_can_castle_king_side, player_can_castle_queen_side,
-				   opponent_can_castle_king_side, opponent_can_castle_queen_side, move_info, magic_bitboards);
+		unmakeMove(move, player, opponent, move_info, magic_bitboards);
 	}
 
 	return nodes;
@@ -74,20 +66,12 @@ unsigned long long PerftDivide(int depth, Player& player, Player& opponent, cons
 	moves.generateMoves(player, opponent, magic_bitboards);
 
 	for (const unsigned short move : moves) {
-
-		location opponent_en_passant_target = opponent.locations.en_passant_target;
-		bool player_can_castle_king_side = player.can_castle_king_side;
-		bool player_can_castle_queen_side = player.can_castle_queen_side;
-		bool opponent_can_castle_king_side = opponent.can_castle_king_side;
-		bool opponent_can_castle_queen_side = opponent.can_castle_queen_side;
-
 		std::cout << locationToNotationSquare((move >> 6) & 0x3f) << locationToNotationSquare(move & 0x3f);
 		MoveInfo move_info = makeMove(move, player, opponent, 0, magic_bitboards, zobrist_keys);
 		unsigned long long nodes_move = Perft(depth - 1, opponent, player, magic_bitboards, zobrist_keys);
 		nodes += nodes_move;
 		std::cout << ": " << nodes_move << '\n';
-		unmakeMove(move, player, opponent, opponent_en_passant_target, player_can_castle_king_side, player_can_castle_queen_side,
-				   opponent_can_castle_king_side, opponent_can_castle_queen_side, move_info, magic_bitboards);
+		unmakeMove(move, player, opponent, move_info, magic_bitboards);
 	}
 
 	opponent.bitboards.attacks = attacks;

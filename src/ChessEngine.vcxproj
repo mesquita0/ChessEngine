@@ -141,6 +141,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Evaluate.cpp" />
+    <ClCompile Include="GameOutcomes.cpp" />
     <ClCompile Include="MagicBitboards.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MakeMoves.cpp" />
@@ -154,6 +156,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BitBoards.h" />
+    <ClInclude Include="Evaluate.h" />
+    <ClInclude Include="GameOutcomes.h" />
     <ClInclude Include="MagicBitboards.h" />
     <ClInclude Include="MakeMoves.h" />
     <ClInclude Include="Perft.h" />

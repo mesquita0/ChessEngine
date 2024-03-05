@@ -11,6 +11,8 @@ constexpr short rook_capture = 4;
 constexpr short queen_capture = 5;
 
 struct MoveInfo {
+	bool player_could_castle_king_side, player_could_castle_queen_side, opponent_could_castle_king_side, opponent_could_castle_queen_side;
+	location opponent_en_passant_target;
 	short capture_flag;
 	unsigned long long hash;
 };
@@ -18,6 +20,4 @@ struct MoveInfo {
 // Returns move info to be used in unmakeMove.
 MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys);
 
-void unmakeMove(const unsigned short move, Player& player, Player& opponent, location opponent_en_passant_target, 
-				bool player_can_castle_king_side, bool player_can_castle_queen_side, bool opponent_can_castle_king_side, 
-				bool opponent_can_castle_queen_side, const MoveInfo& move_info, const MagicBitboards& magic_bitboards);
+void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info, const MagicBitboards& magic_bitboards);
