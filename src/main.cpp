@@ -11,10 +11,10 @@
 #include <array>
 #include <bit>
 #include <iostream>
-#include <sstream>
+#include <vector>
 #include <string>
 
-constexpr int search_depth = 4;
+constexpr int search_depth = 8;
 
 using std::cout;
 
@@ -53,7 +53,7 @@ int main() {
 	GameOutcome game_outcome = ongoing;
 	Moves moves;
 	moves.generateMoves(*player, *opponent, magic_bitboards);
-	std::vector<unsigned long long> positions = { hash };
+	HashPositions hash_positions(hash);
 
 	while (moves.num_moves != 0) {
 
@@ -85,7 +85,7 @@ int main() {
 			}
 		}
 		else {
-			move = FindBestMove(search_depth, *player, *opponent, positions, half_moves, magic_bitboards, zobrist_keys);
+			move = FindBestMove(search_depth, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys);
 			cout << locationToNotationSquare((move >> 6) & 0b111111);
 			cout << locationToNotationSquare(move & 0b111111);
 			cout << "\n\n";
@@ -93,15 +93,13 @@ int main() {
 		}
 
 		MoveInfo move_info = makeMove(move, *player, *opponent, hash, magic_bitboards, zobrist_keys);
-		hash = move_info.hash;
-		positions.push_back(hash);
 
 		unsigned short move_flag = (move & 0xf000);
-		half_moves = updatePositions(positions, move_info.capture_flag, move_flag, half_moves);
+		half_moves = hash_positions.updatePositions(move_info.capture_flag, move_flag, move_info.hash, half_moves);
 
 		if (!player->is_white) full_moves++;
 
-		game_outcome = getGameOutcome(*player, *opponent, positions, half_moves);
+		game_outcome = getGameOutcome(*player, *opponent, hash_positions, half_moves);
 		if (game_outcome != ongoing) break;
 
 		// Swap turn and generate moves for player

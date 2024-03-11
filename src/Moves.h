@@ -49,6 +49,9 @@ public:
 	inline unsigned short* end() { return &this->moves[num_moves]; }
 	inline const unsigned short* end() const { return &this->moves[num_moves]; }
 
+	inline unsigned short operator[] (int i) const { return moves[i]; }
+	inline unsigned short& operator[] (int i) { return moves[i]; }
+
 	void generateMoves(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);
 	unsigned short isMoveValid(location start_square, location final_square);
 };

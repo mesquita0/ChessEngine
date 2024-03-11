@@ -7,40 +7,59 @@
 constexpr unsigned long long white_squares = 0x55AA55AA55AA55AA;
 constexpr unsigned long long black_squares = ~white_squares;
 
-int updatePositions(std::vector<unsigned long long>& positions, const short capture_flag, const unsigned short move_flag, int half_moves) {
+HashPositions::HashPositions(unsigned long long initial_hash) {
+	positions.reserve(100);
+	positions.push_back(initial_hash);
+}
+
+int HashPositions::updatePositions(const short capture_flag, const unsigned short move_flag, const unsigned long long new_hash, int half_moves) {
 	if (capture_flag == no_capture && move_flag != pawn_move && move_flag != pawn_move_two_squares) { // If no capture or pawn moves
 		half_moves++;
 
 		if (move_flag == castle_king_side || move_flag == castle_queen_side) {
-			positions.clear();
+			clear();
 		}
 	}
 	else {
 		half_moves = 0;
-		positions.clear();
+		clear();
 	}
+
+	positions.push_back(new_hash);
 
 	return half_moves;
 }
 
-GameOutcome getGameOutcome(const Player& player, const Player& opponent, const std::vector<unsigned long long>& positions, int half_moves) {
+void HashPositions::unbranch(int previous_branch_id, int previous_start) {
+	clear();
+	branch_id = previous_branch_id;
+	start = previous_start;
+}
+
+void HashPositions::clear() {
+	int size = positions.size(); 
+	for (int i = branch_id; i < size; i++) positions.pop_back(); 
+	start = branch_id;
+}
+
+GameOutcome getGameOutcome(const Player& player, const Player& opponent, const HashPositions& positions, int half_moves) {
 	if (half_moves == 100) {
 		return draw_by_50_move_rule;
 	}
 
 	// Check draw by repetition
-	if (positions.size() > 8) { // Can only repeat position 3 times after at leat 9 moves without captures or pawn moves
+	if (positions.num_positions() > 8) { // Can only repeat position 3 times after at leat 9 moves without captures or pawn moves
 
 		// Position to be repeated is the last one, since if another position
 		// was repeated 3 times the game would have alredy ended.
-		unsigned long long repeated_pos = positions.back();
+		unsigned long long repeated_pos = positions.last_hash();
 		int count = 1;
 
 		// A position can only repeat after at leat two moves for each side
-		int i = positions.size() - 5;
+		int i = positions.num_positions() - 5 + positions.start;
 
 		while (i >= 0) {
-			if (positions[i] == repeated_pos) {
+			if (positions.positions[i] == repeated_pos) {
 				if (++count == 3) {
 					return draw_by_repetition;
 				}

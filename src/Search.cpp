@@ -11,24 +11,29 @@
 
 constexpr double worst_eval = -100000000;
 
-unsigned short FindBestMove(int depth, Player& player, Player& opponent, std::vector<unsigned long long>& positions, int half_moves, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
+unsigned short FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves, 
+						    const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
 	unsigned short best_move = 0;
 	double best_move_eval = worst_eval;
 	Moves moves;
 	moves.generateMoves(player, opponent, magic_bitboards);
 
-	unsigned long long hash = (positions.size() != 0) ? positions.back() : 0;
+	int branch_id = positions.branch_id;
+	int start = positions.start;
+	positions.branch();
+	unsigned long long current_hash = positions.last_hash();
+
 	for (const unsigned short move : moves) {
 		unsigned short move_flag = (move & 0xf000);
 
-		MoveInfo mv_inf = makeMove(move, player, opponent, hash, magic_bitboards, zobrist_keys);
-		auto pos = positions;
-		int new_half_moves = updatePositions(positions, mv_inf.capture_flag, move_flag, half_moves);
+		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash, magic_bitboards, zobrist_keys);
+		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
 
-		double eval = -Search(depth - 1, opponent, player, positions, new_half_moves, magic_bitboards, zobrist_keys);
-
-		positions = pos;
+		double eval = -Search(depth - 1, INT_MIN + 1, INT_MAX, opponent, player, positions, new_half_moves, magic_bitboards, zobrist_keys);
+		
 		unmakeMove(move, player, opponent, mv_inf, magic_bitboards);
+		positions.clear();
+		positions.start = start;
 
 		if (eval > best_move_eval) {
 			best_move_eval = eval;
@@ -36,10 +41,14 @@ unsigned short FindBestMove(int depth, Player& player, Player& opponent, std::ve
 		}
 	}
 
+	positions.unbranch(branch_id, start);
+
 	return best_move;
 }
 
-double Search(int depth, Player& player, Player& opponent, std::vector<unsigned long long>& positions, int half_moves, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
+
+double Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions,
+			  int half_moves, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
 	
 	// Check draws
  	GameOutcome game_outcome = getGameOutcome(player, opponent, positions, half_moves);
@@ -64,24 +73,38 @@ double Search(int depth, Player& player, Player& opponent, std::vector<unsigned 
 
 	// TODO: order moves
 
-	double best_eval = worst_eval;
-	unsigned long long hash = (positions.size() != 0) ? positions.back() : 0;
+	int branch_id = positions.branch_id;
+	int start = positions.start;
+	positions.branch();
+	unsigned long long current_hash = positions.last_hash();
+
 	for (const unsigned short move : moves) {
 		unsigned short move_flag = (move & 0xf000);
 
-		MoveInfo mv_inf = makeMove(move, player, opponent, hash, magic_bitboards, zobrist_keys);
-		auto pos = positions;
-		int new_half_moves = updatePositions(positions, mv_inf.capture_flag, move_flag, half_moves);
+		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash, magic_bitboards, zobrist_keys);
+		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
 
-		double eval = -Search(depth - 1, opponent, player, positions, new_half_moves, magic_bitboards, zobrist_keys);
+		// Make move does not update player attack bitboard, which is used in Evaluate, update when next call of Search will have a depth of 0
+		if (depth == 1) {
+			player.bitboards.attacks = generateAttacksBitBoard(player.is_white, player.locations, player.bitboards.all_pieces, player.num_pawns, 
+															   player.num_knights, player.num_bishops, player.num_rooks, player.num_queens, magic_bitboards);
+		}
 
-		positions = pos;
+		double eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, magic_bitboards, zobrist_keys);
+
 		unmakeMove(move, player, opponent, mv_inf, magic_bitboards);
+		positions.clear();
+		positions.start = start;
 
-		if (eval > best_eval) {
-			best_eval = eval;
+		if (eval >= beta) {
+			return beta;
+		}
+		if (eval > alpha) {
+			alpha = eval;
 		}
 	}
 
-	return best_eval;
+	positions.unbranch(branch_id, start);
+
+	return alpha;
 }
