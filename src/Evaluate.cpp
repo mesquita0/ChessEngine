@@ -15,25 +15,46 @@ constexpr unsigned long long Gfile = 0x0202020202020202;
 constexpr unsigned long long Hfile = 0x0101010101010101;
 constexpr std::array<unsigned long long, 8> files = { Afile, Bfile, Cfile, Dfile, Efile, Gfile, Hfile };
 
-static double PawnStructure(const Player& player);
+static int PawnStructure(const Player& player);
 
-double Evaluate(const Player& player, const Player& opponent) {
-	double score_player = player.num_pawns + 3 * (player.num_knights + player.num_bishops) + player.num_rooks * 5 + player.num_queens * 9;
-	double score_opponent = opponent.num_pawns + 3 * (opponent.num_knights + opponent.num_bishops) + opponent.num_rooks * 5 + opponent.num_queens * 9;
+int Evaluate(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards, int depth_searched) {
+
+	// If Checkmate
+	if (player.bitboards.king & opponent.bitboards.attacks) {
+		unsigned long long king_attacks = magic_bitboards.king_attacks_array[player.locations.king];
+		king_attacks &= ~opponent.bitboards.attacks; // Remove defended squares
+		king_attacks &= ~player.bitboards.all_pieces; // Remove occupied squares
+
+		// If player's king can't move
+		if (!king_attacks) {
+			if (!(player.bitboards.squares_to_uncheck & player.bitboards.attacks)) { // Checkmate if player cant get out of check
+				return checkmated_eval + depth_searched;
+			}
+		}
+	}
+
+	double score_player = player.num_pawns + 30 * (player.num_knights + player.num_bishops) + player.num_rooks * 50 + player.num_queens * 90;
+	double score_opponent = opponent.num_pawns + 30 * (opponent.num_knights + opponent.num_bishops) + opponent.num_rooks * 50 + opponent.num_queens * 90;
 
 	score_player += PawnStructure(player);
 	score_opponent += PawnStructure(opponent);
 
 	std::bitset<64> attacks_player{ player.bitboards.attacks };
 	std::bitset<64> attacks_opponent{ opponent.bitboards.attacks };
-	score_player += 0.1 * attacks_player.count();
-	score_opponent += 0.1 * attacks_opponent.count();
+	score_player += attacks_player.count();
+	score_opponent += attacks_opponent.count();
+
+	// Castle
+	if (player.can_castle_king_side) score_player += 2;
+	if (player.can_castle_queen_side) score_player += 2;
+	if (opponent.can_castle_king_side) score_opponent += 2;
+	if (opponent.can_castle_queen_side) score_opponent += 2;
 
 	return score_player - score_opponent;
 }
 
-static double PawnStructure(const Player& player) {
-	double score = 0;
+static int PawnStructure(const Player& player) {
+	int score = 0;
 
 	for (int i = 0; i < 8; i++) {
 		unsigned long long pawns_file = player.bitboards.pawns & files[i];
@@ -41,7 +62,7 @@ static double PawnStructure(const Player& player) {
 
 		// Bit hack to see if there's more than one pawn in the same file (doubled pawns)
 		if ((pawns_file & (pawns_file - 1)) != 0) {
-			score -= 0.5;
+			score -= 5;
 		}
 
 		unsigned long long pawns_adjacent_file;
@@ -51,7 +72,7 @@ static double PawnStructure(const Player& player) {
 
 		// Isolated pawn
 		if (!pawns_adjacent_file) {
-			score -= 0.5;
+			score -= 5;
 		}
 	}
 

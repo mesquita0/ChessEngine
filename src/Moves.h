@@ -1,6 +1,7 @@
 #pragma once
 #include "Player.h"
 #include <array>
+#include <climits>
 
 class MagicBitboards;
 
@@ -31,6 +32,8 @@ struct AttacksInfo {
 */
 class Moves {
 	std::array<unsigned short, max_num_moves> moves = {};
+	std::array<short, max_num_moves> scores = {};
+	int last_score_picked = INT_MAX;
 
 public:
 	short num_moves = 0;
@@ -53,7 +56,15 @@ public:
 	inline unsigned short& operator[] (int i) { return moves[i]; }
 
 	void generateMoves(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);
+
+	/* Updates player's attack bitboard, does not include king attacks to squares that 
+	are defedend or attacks of pinned pieces that would leave the king in check if played */
+	void generateCaptures(Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);
+
 	unsigned short isMoveValid(location start_square, location final_square);
+
+	void orderMoves(const Player& player, const Player& opponent);
+	unsigned short getNextOrderedMove();
 };
 
 AttacksInfo generateAttacksInfo(bool is_white, const Locations& locations, unsigned long long all_pieces,

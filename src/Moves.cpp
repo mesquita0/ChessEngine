@@ -4,6 +4,7 @@
 #include "Player.h"
 #include <array>
 #include <bit>
+#include <climits>
 
 constexpr unsigned char location_mask = 0b00111111;
 constexpr unsigned long long castle_king_side_white_mask = 0b01100000;
@@ -246,6 +247,181 @@ void Moves::generateMoves(const Player& player, const Player& opponent, const Ma
 	}
 }
 
+void Moves::generateCaptures(Player& player, const Player& opponent, const MagicBitboards& magic_bitboards) {
+	player.bitboards.attacks = 0;
+	unsigned long long opponent_pieces = opponent.bitboards.friendly_pieces;
+	if (player.bitboards.king & opponent.bitboards.attacks) opponent_pieces &= player.bitboards.squares_to_uncheck;
+
+	// Pawn moves
+	short capture_right = player.is_white ? 9 : -9;
+	short capture_left = player.is_white ? 7 : -7;
+	short right_edge = player.is_white ? 7 : 0;
+	short left_edge = player.is_white ? 0 : 7;
+
+	int pawns_searched = 0;
+	for (location pawn_location : player.locations.pawns) {
+		if (pawns_searched == player.num_pawns) break;
+		if (pawn_location == 0) continue;
+		pawn_location &= location_mask;
+		short file = pawn_location % 8;
+		unsigned long long pawn_attacks = 0;
+		pawns_searched++;
+
+		// If pawn can capture to at its right
+		if (file != right_edge) {
+			pawn_attacks |= (1LL << (pawn_location + capture_right));
+		}
+
+		// If pawn can capture to at its left
+		if (file != left_edge) {
+			pawn_attacks |= (1LL << (pawn_location + capture_left));
+		}
+
+		// Remove attacks that would leave the king in check if piece is pinned
+		if (player.isPinned(pawn_location)) pawn_attacks &= player.pins[pawn_location].squares_to_unpin; 
+
+		player.bitboards.attacks |= pawn_attacks;
+		pawn_attacks &= opponent_pieces;
+
+		if (pawn_attacks)
+			addMovesFromAttacksBitboard(pawn_location, false, 0, pawn_attacks, pawn_move, this);
+	}
+
+	// Knight moves
+	int knights_searched = 0;
+	for (location knight_location : player.locations.knights) {
+		if (knights_searched == player.num_knights) break;
+		if (knight_location == 0) continue;
+		knight_location &= location_mask;
+		knights_searched++;
+		if (player.isPinned(knight_location)) continue;
+
+		unsigned long long knight_attacks = magic_bitboards.knights_attacks_array[knight_location];
+		player.bitboards.attacks |= knight_attacks;
+		knight_attacks &= opponent_pieces;
+
+		if (knight_attacks)
+			addMovesFromAttacksBitboard(knight_location, false, 0, knight_attacks, knight_move, this);
+	}
+
+	// Bishop moves
+	int bishops_searched = 0;
+	for (location bishop_location : player.locations.bishops) {
+		if (bishops_searched == player.num_bishops) break;
+		if (bishop_location == 0) continue;
+		bishop_location &= location_mask;
+		bishops_searched++;
+
+		unsigned long long bishop_attacks = slidingMoves(magic_bitboards.bishops_magic_bitboards[bishop_location], player.bitboards.all_pieces);
+
+		// Remove attacks that would leave the king in check if piece is pinned
+		if (player.isPinned(bishop_location)) bishop_attacks &= player.pins[bishop_location].squares_to_unpin;
+
+		player.bitboards.attacks |= bishop_attacks;
+		bishop_attacks &= opponent_pieces;
+
+		if (bishop_attacks)
+			addMovesFromAttacksBitboard(bishop_location, false, 0, bishop_attacks, bishop_move, this);
+	}
+
+
+	// Rook moves
+	int rooks_searched = 0;
+	for (location rook_location : player.locations.rooks) {
+		if (rooks_searched == player.num_rooks) break;
+		if (rook_location == 0) continue;
+		rook_location &= location_mask;
+		rooks_searched++;
+
+		unsigned long long rook_attacks = slidingMoves(magic_bitboards.rooks_magic_bitboards[rook_location], player.bitboards.all_pieces);
+
+		// Remove attacks that would leave the king in check if piece is pinned
+		if (player.isPinned(rook_location)) rook_attacks &= player.pins[rook_location].squares_to_unpin;
+
+		player.bitboards.attacks |= rook_attacks;
+		rook_attacks &= opponent_pieces;
+
+		if (rook_attacks)
+			addMovesFromAttacksBitboard(rook_location, false, 0, rook_attacks, rook_move, this);
+	}
+
+	// Quuen moves
+	int queens_searched = 0;
+	for (location queen_location : player.locations.queens) {
+		if (queens_searched == player.num_queens) break;
+		if (queen_location == 0) continue;
+		queen_location &= location_mask;
+		queens_searched++;
+
+		// Bishop attacks
+		unsigned long long bishop_attacks = slidingMoves(magic_bitboards.bishops_magic_bitboards[queen_location], player.bitboards.all_pieces);
+
+		if (player.isPinned(queen_location)) // Remove attacks that would leave the king in check if piece is pinned
+			bishop_attacks &= player.pins[queen_location].squares_to_unpin; 
+
+		player.bitboards.attacks |= bishop_attacks;
+		bishop_attacks &= opponent_pieces;
+
+		if (bishop_attacks) 
+			addMovesFromAttacksBitboard(queen_location, false, 0, bishop_attacks, queen_move, this);
+
+		// Rook attacks
+		unsigned long long rook_attacks = slidingMoves(magic_bitboards.rooks_magic_bitboards[queen_location], player.bitboards.all_pieces);
+
+		if (player.isPinned(queen_location)) // Remove attacks that would leave the king in check if piece is pinned
+			rook_attacks &= player.pins[queen_location].squares_to_unpin;
+
+		player.bitboards.attacks |= rook_attacks;
+		rook_attacks &= opponent_pieces;
+
+		if (rook_attacks) 
+			addMovesFromAttacksBitboard(queen_location, false, 0, rook_attacks, queen_move, this);
+	}
+
+	// King moves
+	unsigned long long king_attacks = magic_bitboards.king_attacks_array[player.locations.king];
+	king_attacks &= ~opponent.bitboards.attacks; // Remove defedended squares
+	player.bitboards.attacks |= king_attacks;
+	king_attacks &= opponent_pieces; 
+
+	if (king_attacks)
+		addMovesFromAttacksBitboard(player.locations.king, false, 0, king_attacks, king_move, this);
+}
+
+void Moves::orderMoves(const Player& player, const Player& opponent) {
+	for (int i = 0; i < num_moves; i++) {
+		scores[i] += i; // Ensure that two moves dont have the same scores
+
+		location final_square = moves[i] & 0b111111;
+		unsigned long long final_square_bitboard = 1LL << final_square;
+
+		if (final_square_bitboard & opponent.bitboards.friendly_pieces) {
+			scores[i] += 10000;
+		}
+
+		if (final_square_bitboard & opponent.bitboards.attacks) {
+			scores[i] -= 5000;
+		}
+	}
+}
+
+unsigned short Moves::getNextOrderedMove() {
+	short next_max = SHRT_MIN;
+	int next_max_pos = 0;
+	for (int i = 0; i < num_moves; i++) {
+		if (scores[i] > next_max && scores[i] < last_score_picked) {
+			next_max = scores[i];
+			next_max_pos = i;
+		}
+	}
+
+	// Return 0 if there are no more moves to be searched in the list
+	if (next_max == SHRT_MIN) return 0;
+
+	last_score_picked = next_max;
+	return moves[next_max_pos];
+}
+
 AttacksInfo generateAttacksInfo(bool is_white, const Locations& locations, unsigned long long all_pieces,
 								int num_pawns, int num_knights, int num_bishops, int num_rooks, int num_queens,
 							    location opponent_king_location, const MagicBitboards& magic_bitboards) {
@@ -309,6 +485,7 @@ AttacksInfo generateAttacksInfo(bool is_white, const Locations& locations, unsig
 		bishop_location &= location_mask;
 		bishops_searched++;
 
+		// Remove opponent king from all pieces to ensure that in the next move the king gets out of check
 		unsigned long long bishop_attacks = slidingMoves(magic_bitboards.bishops_magic_bitboards[bishop_location], all_pieces ^ opponent_king);
 		attacks_bitboard |= bishop_attacks;
 
@@ -333,6 +510,7 @@ AttacksInfo generateAttacksInfo(bool is_white, const Locations& locations, unsig
 		rook_location &= location_mask;
 		rooks_searched++;
 
+		// Remove opponent king from all pieces to ensure that in the next move the king gets out of check
 		unsigned long long rook_attacks = slidingMoves(magic_bitboards.rooks_magic_bitboards[rook_location], all_pieces ^ opponent_king);
 		attacks_bitboard |= rook_attacks;
 
@@ -388,7 +566,7 @@ AttacksInfo generateAttacksInfo(bool is_white, const Locations& locations, unsig
 	}
 
 	// King moves
-	attacks_bitboard |= (magic_bitboards.king_attacks_array[locations.king]);
+	attacks_bitboard |= magic_bitboards.king_attacks_array[locations.king];
 
 	return { attacks_bitboard, opponent_squares_to_uncheck };
 }

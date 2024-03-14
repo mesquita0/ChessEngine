@@ -14,7 +14,7 @@
 #include <vector>
 #include <string>
 
-constexpr int search_depth = 8;
+constexpr int search_depth = 6;
 
 using std::cout;
 
@@ -142,4 +142,5 @@ int main() {
 		break;
 
 	}
+	cout << PositionToFEN(*player, *opponent, 0, 1);
 }
