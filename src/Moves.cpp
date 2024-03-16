@@ -2,6 +2,7 @@
 #include "MagicBitboards.h"
 #include "Locations.h"
 #include "Player.h"
+#include "TranspositionTable.h"
 #include <array>
 #include <bit>
 #include <climits>
@@ -388,8 +389,37 @@ void Moves::generateCaptures(Player& player, const Player& opponent, const Magic
 		addMovesFromAttacksBitboard(player.locations.king, false, 0, king_attacks, king_move, this);
 }
 
-void Moves::orderMoves(const Player& player, const Player& opponent) {
+unsigned short Moves::isMoveValid(location start_square, location final_square) {
+	unsigned short desired_move = (start_square << 6 | final_square);
+	for (const unsigned short move : *this) {
+		if (desired_move == (move & 0xfff)) return move;
+	}
+
+	return 0;
+}
+
+bool Moves::isMoveValid(unsigned short move) {
+	for (const unsigned short m : *this) {
+		if (m == move) return true;
+	}
+
+	return false;
+}
+
+void Moves::orderMoves(const Player& player, const Player& opponent, Entry* tt_entry) {
+	unsigned short best_cached_move = tt_entry ? tt_entry->best_move : 0;
+
 	for (int i = 0; i < num_moves; i++) {
+		//
+		if (moves[i] == best_cached_move) {
+			moves[i] = moves[0];
+			scores[i] = scores[0];
+			
+			moves[0] = best_cached_move;
+			scores[0] = SHRT_MAX;
+			continue;
+		}
+
 		scores[i] += i; // Ensure that two moves dont have the same scores
 
 		location final_square = moves[i] & 0b111111;
@@ -413,6 +443,7 @@ unsigned short Moves::getNextOrderedMove() {
 			next_max = scores[i];
 			next_max_pos = i;
 		}
+		if (next_max == SHRT_MAX) break;
 	}
 
 	// Return 0 if there are no more moves to be searched in the list
@@ -698,15 +729,4 @@ void setPin(Player& player, const Player& opponent, location piece_location, boo
 		player.pins[index_pinned_piece].squares_to_unpin = squares_to_uncheck;
 		player.pins[index_pinned_piece].id_move_pinned = player.move_id;
 	}
-}
-
-unsigned short Moves::isMoveValid(location start_square, location final_square) {
-	unsigned short desired_move = (start_square << 6 | final_square);
-	for (const unsigned short move : moves) {
-		if (desired_move == (move & 0xfff)) {
-			return move;
-		}
-	}
-
-	return 0;
 }

@@ -392,12 +392,12 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 			location initial_square_rook_queen_side_opponent = player.is_white ? 56 : 0;
 			if (opponent.can_castle_king_side && final_square == initial_square_rook_king_side_opponent) {
 				opponent.can_castle_king_side = false;
-				if (player.is_white) hash ^= zobrist_keys.white_castle_king_side;
+				if (opponent.is_white) hash ^= zobrist_keys.white_castle_king_side;
 				else hash ^= zobrist_keys.black_castle_king_side;
 			}
 			else if (opponent.can_castle_queen_side && final_square == initial_square_rook_queen_side_opponent) {
 				opponent.can_castle_queen_side = false;
-				if (player.is_white) hash ^= zobrist_keys.white_castle_queen_side;
+				if (opponent.is_white) hash ^= zobrist_keys.white_castle_queen_side;
 				else hash ^= zobrist_keys.black_castle_queen_side;
 			}
 		}
@@ -426,6 +426,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 	player.move_id++;
 	opponent.move_id++;
 	setPins(opponent, player, magic_bitboards);
+
+	// Flip turn to move
+	hash ^= zobrist_keys.is_black_to_move;
 
 	return { player_could_castle_king_side, player_could_castle_queen_side, opponent_could_castle_king_side, opponent_could_castle_queen_side, opponent_en_passant_target, capture_type, hash };
 }

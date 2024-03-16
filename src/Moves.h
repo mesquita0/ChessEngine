@@ -1,5 +1,6 @@
 #pragma once
 #include "Player.h"
+#include "TranspositionTable.h"
 #include <array>
 #include <climits>
 
@@ -62,8 +63,9 @@ public:
 	void generateCaptures(Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);
 
 	unsigned short isMoveValid(location start_square, location final_square);
+	bool isMoveValid(unsigned short move);
 
-	void orderMoves(const Player& player, const Player& opponent);
+	void orderMoves(const Player& player, const Player& opponent, Entry* tt_entry);
 	unsigned short getNextOrderedMove();
 };
 

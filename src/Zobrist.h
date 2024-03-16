@@ -1,36 +1,35 @@
 #pragma once
 #include "Position.h"
 #include <array>
-
-typedef unsigned long long u64;
+#include <cstdint>
 
 class ZobristKeys {
-	std::array<u64, 776> keys = {};
+	std::array<uint64_t, 776> keys = {};
 
 public:
-	u64* white_pawn;
-	u64* white_knight;
-	u64* white_bishop;
-	u64* white_rook;
-	u64* white_queen;
-	u64* white_king;
+	uint64_t* white_pawn;
+	uint64_t* white_knight;
+	uint64_t* white_bishop;
+	uint64_t* white_rook;
+	uint64_t* white_queen;
+	uint64_t* white_king;
 
-	u64* black_pawn;
-	u64* black_knight;
-	u64* black_bishop;
-	u64* black_rook;
-	u64* black_queen;
-	u64* black_king;
+	uint64_t* black_pawn;
+	uint64_t* black_knight;
+	uint64_t* black_bishop;
+	uint64_t* black_rook;
+	uint64_t* black_queen;
+	uint64_t* black_king;
 
-	u64* en_passant_file;
+	uint64_t* en_passant_file;
 
-	u64 is_black_to_move;
-	u64 white_castle_king_side;
-	u64 white_castle_queen_side;
-	u64 black_castle_king_side;
-	u64 black_castle_queen_side;
+	uint64_t is_black_to_move;
+	uint64_t white_castle_king_side;
+	uint64_t white_castle_queen_side;
+	uint64_t black_castle_king_side;
+	uint64_t black_castle_queen_side;
 
 	ZobristKeys();
 
-	u64 positionToHash(const Position& position);
+	uint64_t positionToHash(const Player& player, const Player& opponent) const;
 };

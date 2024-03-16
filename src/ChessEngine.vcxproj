@@ -154,6 +154,7 @@
     <ClCompile Include="Locations.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Search.cpp" />
+    <ClCompile Include="TranspositionTable.cpp" />
     <ClCompile Include="Zobrist.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -169,6 +170,7 @@
     <ClInclude Include="Locations.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Search.h" />
+    <ClInclude Include="TranspositionTable.h" />
     <ClInclude Include="Zobrist.h" />
   </ItemGroup>
   <ItemGroup>

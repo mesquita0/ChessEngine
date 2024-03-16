@@ -7,6 +7,7 @@
 #include "MagicBitboards.h"
 #include "MakeMoves.h"
 #include "Search.h"
+#include "TranspositionTable.h"
 #include "Zobrist.h"
 #include <array>
 #include <bit>
@@ -14,7 +15,7 @@
 #include <vector>
 #include <string>
 
-constexpr int search_depth = 6;
+constexpr int search_depth = 8;
 
 using std::cout;
 
@@ -25,20 +26,21 @@ int main() {
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) {
 		cout << "Couldn't load Magic Bitboards file.";
-		return 2;
+		return 1;
 	}
 
 	// Set up initial position
 	std::string FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	Position initial_pos = FENToPosition(FEN, magic_bitboards);
-	auto [first_to_move, second_to_move, half_moves, full_moves] = initial_pos;
+	auto [first_to_move, second_to_move, half_moves, full_moves] = FENToPosition(FEN, magic_bitboards);
 	if (full_moves == -1) {
 		cout << "Invalid Fen position.\n";
-		return 1;
+		return 2;
 	}
 
-	ZobristKeys zobrist_keys = ZobristKeys();
-	unsigned long long hash = zobrist_keys.positionToHash(initial_pos);
+	// Generate Zobrist keys and allocate transposition table
+	ZobristKeys zobrist_keys;
+	unsigned long long hash = zobrist_keys.positionToHash(first_to_move, second_to_move);
+	TranspositionTable transposition_table(256); // Size in mb, must be a power of two
 
 	Player* player = &first_to_move;
 	Player* opponent = &second_to_move;
@@ -85,9 +87,11 @@ int main() {
 			}
 		}
 		else {
-			move = FindBestMove(search_depth, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys);
+			SearchResult search_result = FindBestMoveItrDeepening(search_depth, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys, transposition_table);
+			move = search_result.best_move;
 			cout << locationToNotationSquare((move >> 6) & 0b111111);
 			cout << locationToNotationSquare(move & 0b111111);
+			cout << " " << search_result.evaluation;
 			cout << "\n\n";
 			is_engine_turn = false;
 		}
