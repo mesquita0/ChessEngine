@@ -22,6 +22,14 @@ constexpr unsigned short rook_move = 0b1100 << 12;
 constexpr unsigned short queen_move = 0b1101 << 12;
 constexpr unsigned short king_move = 0b1110 << 12;
 
+// Assert all promotion flags start with 01 so that isPromotion can work properly
+static constexpr unsigned short promotion_mask = 0b11 << 14;
+static constexpr unsigned short promotion = 0b01 << 14;
+static_assert((promotion_knight & promotion_mask) == promotion);
+static_assert((promotion_bishop & promotion_mask) == promotion);
+static_assert((promotion_rook & promotion_mask) == promotion);
+static_assert((promotion_queen & promotion_mask) == promotion);
+
 struct AttacksInfo {
 	unsigned long long attacks_bitboard;
 	unsigned long long opponent_squares_to_uncheck;
@@ -62,8 +70,9 @@ public:
 	are defedend or attacks of pinned pieces that would leave the king in check if played */
 	void generateCaptures(Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);
 
-	unsigned short isMoveValid(location start_square, location final_square);
-	bool isMoveValid(unsigned short move);
+	unsigned short isMoveLegal(unsigned short move_flag, location start_square, location final_square);
+	unsigned short isMoveLegal(location start_square, location final_square);
+	bool isMoveLegal(unsigned short move);
 
 	void orderMoves(const Player& player, const Player& opponent, Entry* tt_entry);
 	unsigned short getNextOrderedMove();
@@ -83,3 +92,5 @@ inline unsigned long long generateAttacksBitBoard(bool is_white, const Locations
 }
 
 void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitboards);
+
+inline bool isPromotion(unsigned short move) { return ((move & promotion_mask) == promotion); }

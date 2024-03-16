@@ -52,7 +52,7 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 	unsigned long long current_hash = positions.last_hash();
 	
 	Entry* position_tt = tt.get(current_hash);
-	if (position_tt && position_tt->depth >= depth && moves.isMoveValid(position_tt->best_move)) {
+	if (position_tt && position_tt->depth >= depth && moves.isMoveLegal(position_tt->best_move)) {
 		switch (position_tt->node_flag) {
 		case Exact:
 			return { position_tt->eval, position_tt->best_move };
@@ -104,19 +104,13 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, int half_moves, 
 		   const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, int depth_searched, TranspositionTable& tt) {
 
-	unsigned long long current_hash = positions.last_hash();
-	Entry* position_tt = tt.get(current_hash);
-
 	// Check draws
  	GameOutcome game_outcome = getGameOutcome(player, opponent, positions, half_moves);
 	if (game_outcome != ongoing) return 0;
 
 	// Search only captures when desired depth is reached
 	if (depth == 0) {
-		if (position_tt) return position_tt->eval;
-		int eval = quiescenceSearch(alpha, beta, player, opponent, magic_bitboards, zobrist_keys, depth_searched);
-		tt.store(current_hash, 0, 0, Exact, eval);
-		return eval;
+		return quiescenceSearch(alpha, beta, player, opponent, magic_bitboards, zobrist_keys, depth_searched);
 	}
 
 	Moves moves;
@@ -132,7 +126,10 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 		}
 	}
 
-	if (position_tt && position_tt->depth >= depth && moves.isMoveValid(position_tt->best_move)) {
+	// Check if can get information from the transposition table
+	unsigned long long current_hash = positions.last_hash();
+	Entry* position_tt = tt.get(current_hash);
+	if (position_tt && position_tt->depth >= depth && moves.isMoveLegal(position_tt->best_move)) {
 		switch (position_tt->node_flag) {
 		case Exact:
 			return position_tt->eval;

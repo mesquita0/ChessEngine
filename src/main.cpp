@@ -9,6 +9,7 @@
 #include "Search.h"
 #include "TranspositionTable.h"
 #include "Zobrist.h"
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <iostream>
@@ -67,14 +68,41 @@ int main() {
 			while (true) {
 				std::string move_str;
 				std::cin >> move_str;
-				if (move_str.length() != 4) {
-					cout << "Move is not valid, please enter a valid move.\n\n";
-					continue;
+				std::transform(move_str.begin(), move_str.end(), move_str.begin(), std::tolower);
+
+				// Moves that are not promotions
+				if (move_str.length() == 4) {
+					location start_square = notationSquareToLocation(move_str.substr(0, 2));
+					location final_square = notationSquareToLocation(move_str.substr(2, 2));
+					unsigned short tmp_move = moves.isMoveLegal(start_square, final_square);
+					if (!isPromotion(tmp_move)) move = tmp_move;
 				}
 
-				location start_square = notationSquareToLocation(move_str.substr(0, 2));
-				location final_square = notationSquareToLocation(move_str.substr(2, 2));
-				move = moves.isMoveValid(start_square, final_square);
+				// Promotions
+				else if (move_str.length() == 5) {
+					location start_square = notationSquareToLocation(move_str.substr(0, 2));
+					location final_square = notationSquareToLocation(move_str.substr(2, 2));
+					unsigned short promotion_flag = 0;
+
+					switch (move_str[4]) {
+					case 'n':
+						promotion_flag = promotion_knight;
+						break;
+					case 'b':
+						promotion_flag = promotion_bishop;
+						break;
+					case 'r':
+						promotion_flag = promotion_rook;
+						break;
+					case 'q':
+						promotion_flag = promotion_queen;
+						break;
+					default:
+						break;
+					}
+
+					move = moves.isMoveLegal(promotion_flag, start_square, final_square);
+				}
 				
 				if (move == 0) {
 					cout << "Move is not valid, please enter a valid move.\n\n";
