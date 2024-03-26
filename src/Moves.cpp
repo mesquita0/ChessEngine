@@ -24,6 +24,7 @@ inline void addMovesFromAttacksBitboard(location start_square, bool is_in_check,
 inline unsigned long long squaresToUncheckBishop(location opponent_king_location, location bishop_location, const MagicBitboards& magic_bitboards);
 inline unsigned long long squaresToUncheckRook(location opponent_king_location, location rook_location, const MagicBitboards& magic_bitboards);
 inline bool canMove(bool is_in_check, location final_square, unsigned long long squares_to_uncheck);
+inline int getPieceValue(const Player& player, location square);
 void setPin(Player& player, const Player& opponent, location piece_location, bool is_pin_diagonal, const MagicBitboards& magic_bitboards);
 
 void Moves::generateMoves(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards) {
@@ -32,7 +33,7 @@ void Moves::generateMoves(const Player& player, const Player& opponent, const Ma
 
 	// King moves
 	for (const short move : magic_bitboards.king_moves[player.locations.king]) {
-		short final_square = move & 0b111111;
+		short final_square = getFinalSquare(move);
 		if ((1LL << final_square) & player.bitboards.friendly_pieces) continue;
 		else if ((1LL << final_square) & opponent.bitboards.attacks) continue;
 
@@ -174,7 +175,7 @@ void Moves::generateMoves(const Player& player, const Player& opponent, const Ma
 		if (player.isPinned(knight_location)) continue;
 
 		for (const short move : magic_bitboards.knight_moves[knight_location]) {
-			short final_square = move & 0b111111;
+			short final_square = getFinalSquare(move);
 			if ((1LL << final_square) & player.bitboards.friendly_pieces) continue;
 			if (!canMove(is_in_check, final_square, player.bitboards.squares_to_uncheck)) continue;
 
@@ -419,7 +420,7 @@ void Moves::orderMoves(const Player& player, const Player& opponent, Entry* tt_e
 	unsigned short best_cached_move = tt_entry ? tt_entry->best_move : 0;
 
 	for (int i = 0; i < num_moves; i++) {
-		//
+		// Make best cached move first and assign maximum score
 		if (moves[i] == best_cached_move) {
 			moves[i] = moves[0];
 			scores[i] = scores[0];
@@ -431,16 +432,67 @@ void Moves::orderMoves(const Player& player, const Player& opponent, Entry* tt_e
 
 		scores[i] += i; // Ensure that two moves dont have the same scores
 
-		location final_square = moves[i] & 0b111111;
+		location start_square = getStartSquare(moves[i]);
+		location final_square = getFinalSquare(moves[i]);
 		unsigned long long final_square_bitboard = 1LL << final_square;
+		unsigned short move_flag = getMoveFlag(moves[i]);
 
+		// The switch is a little bit faster than getPieceValue
+		int piece_value = 0;
+		switch (move_flag) {
+		case pawn_move:
+			piece_value = 1000;
+			break;
+		case pawn_move_two_squares:
+			piece_value = 1000;
+			break;
+		case bishop_move:
+			piece_value = 3000;
+			break;
+		case knight_move:
+			piece_value = 3000;
+			break;
+		case rook_move:
+			piece_value = 5000;
+			break;
+		case queen_move:
+			piece_value = 9000;
+			break;
+		case king_move:
+			piece_value = 0; // If king caputes then it is a free piece (only considering one move)
+			break;
+		case en_passant:
+			piece_value = 1000;
+			break;
+		case promotion_knight:
+			piece_value = 1000;
+			scores[i] += 3000;
+			break;
+		case promotion_bishop:
+			piece_value = 1000;
+			scores[i] += 3000;
+			break;
+		case promotion_rook:
+			piece_value = 1000;
+			scores[i] += 5000;
+			break;
+		case promotion_queen:
+			piece_value = 1000;
+			scores[i] += 9000;
+			break;
+		default:
+			break;
+		}
+
+		// Captures
 		if (final_square_bitboard & opponent.bitboards.friendly_pieces) {
-			scores[i] += 10000;
+			int victim_value = getPieceValue(opponent, final_square);
+			scores[i] += victim_value;
 		}
 
-		if (final_square_bitboard & opponent.bitboards.attacks) {
-			scores[i] -= 5000;
-		}
+		// Moving to a defended square
+		if (final_square_bitboard & opponent.bitboards.attacks) 
+			scores[i] -= piece_value;
 	}
 }
 
@@ -647,6 +699,14 @@ inline unsigned long long squaresToUncheckRook(location opponent_king_location, 
 
 inline bool canMove(bool is_in_check, location final_square, unsigned long long squares_to_uncheck) {
 	return (!is_in_check || ((1LL << final_square) & squares_to_uncheck));
+}
+
+inline int getPieceValue(const Player& player, location square) {
+	unsigned long long bitboard = 1LL << square;
+	if (player.bitboards.pawns & bitboard) return 1000;
+	else if ((player.bitboards.knights & bitboard) || (player.bitboards.bishops & bitboard)) return 3000;
+	else if (player.bitboards.rooks & bitboard) return 5000;
+	return 9000; // Queen
 }
 
 void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitboards) {

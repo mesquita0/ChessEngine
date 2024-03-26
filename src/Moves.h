@@ -1,4 +1,5 @@
 #pragma once
+#include "Locations.h"
 #include "Player.h"
 #include "TranspositionTable.h"
 #include <array>
@@ -21,6 +22,8 @@ constexpr unsigned short bishop_move = 0b1011 << 12;
 constexpr unsigned short rook_move = 0b1100 << 12;
 constexpr unsigned short queen_move = 0b1101 << 12;
 constexpr unsigned short king_move = 0b1110 << 12;
+static constexpr unsigned short move_flag_mask = 0b1111 << 12;
+static constexpr unsigned short square_mask = 0b111111;
 
 // Assert all promotion flags start with 01 so that isPromotion can work properly
 static constexpr unsigned short promotion_mask = 0b11 << 14;
@@ -94,3 +97,6 @@ inline unsigned long long generateAttacksBitBoard(bool is_white, const Locations
 void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitboards);
 
 inline bool isPromotion(unsigned short move) { return ((move & promotion_mask) == promotion); }
+inline unsigned short getMoveFlag(unsigned short move) { return move & move_flag_mask; }
+inline location getStartSquare(unsigned short move) { return (move >> 6) & square_mask; }
+inline location getFinalSquare(unsigned short move) { return move & square_mask; }

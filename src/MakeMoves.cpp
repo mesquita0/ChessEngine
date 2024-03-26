@@ -3,13 +3,10 @@
 #include "Moves.h"
 #include "Zobrist.h"
 
-constexpr unsigned short flag_mask = 0b1111 << 12;
-constexpr unsigned short location_mask = 0b111111;
-
 MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
-	unsigned short flag = move & flag_mask;
-	location start_square = (move >> 6) & location_mask;
-	location final_square = move & location_mask;
+	unsigned short flag = getMoveFlag(move);
+	location start_square = getStartSquare(move);
+	location final_square = getFinalSquare(move);
 	location initial_square_rook_king_side = player.is_white ? 7 : 63;
 	location initial_square_rook_queen_side = player.is_white ? 0 : 56;
 	short capture_type = no_capture;
@@ -434,9 +431,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 }
 
 void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info, const MagicBitboards& magic_bitboards) {
-	unsigned short flag = move & flag_mask;
-	location start_square = (move >> 6) & location_mask;
-	location final_square = move & location_mask;
+	unsigned short flag = getMoveFlag(move);
+	location start_square = getStartSquare(move);
+	location final_square = getFinalSquare(move);
 	location initial_square_rook_king_side = player.is_white ? 7 : 63;
 	location initial_square_rook_queen_side = player.is_white ? 0 : 56;
 	short capture_type = move_info.capture_flag;

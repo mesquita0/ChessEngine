@@ -126,7 +126,7 @@ int main() {
 
 		MoveInfo move_info = makeMove(move, *player, *opponent, hash, magic_bitboards, zobrist_keys);
 
-		unsigned short move_flag = (move & 0xf000);
+		unsigned short move_flag = getMoveFlag(move);
 		half_moves = hash_positions.updatePositions(move_info.capture_flag, move_flag, move_info.hash, half_moves);
 
 		if (!player->is_white) full_moves++;

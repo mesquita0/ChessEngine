@@ -74,7 +74,7 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 	unsigned short move;
 
 	while (move = moves.getNextOrderedMove()) {
-		unsigned short move_flag = (move & 0xf000);
+		unsigned short move_flag = getMoveFlag(move);
 
 		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash, magic_bitboards, zobrist_keys);
 		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
@@ -158,7 +158,7 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 	bool did_fail_low = true;
 
 	while (move = moves.getNextOrderedMove()) {
-		unsigned short move_flag = (move & 0xf000);
+		unsigned short move_flag = getMoveFlag(move);
 
 		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash, magic_bitboards, zobrist_keys);
 		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
