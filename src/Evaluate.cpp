@@ -17,7 +17,7 @@ constexpr std::array<unsigned long long, 8> files = { Afile, Bfile, Cfile, Dfile
 
 static int PawnStructure(const Player& player);
 
-int Evaluate(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards, int depth_searched) {
+int Evaluate(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards) {
 
 	// If Checkmate
 	if (player.bitboards.king & opponent.bitboards.attacks) {
@@ -28,7 +28,7 @@ int Evaluate(const Player& player, const Player& opponent, const MagicBitboards&
 		// If player's king can't move
 		if (!king_attacks) {
 			if (!(player.bitboards.squares_to_uncheck & player.bitboards.attacks)) { // Checkmate if player cant get out of check
-				return checkmated_eval + depth_searched;
+				return checkmated_eval;
 			}
 		}
 	}

@@ -145,7 +145,7 @@ void Moves::generateMoves(const Player& player, const Player& opponent, const Ma
 				unsigned long long rooks_and_queens = opponent.bitboards.rooks | opponent.bitboards.queens;
 				bool can_en_passant = true;
 				int square = 0;
-				while (rooks_and_queens != 0) {
+				while (rooks_and_queens != 0 && square <= 63) {
 					int squares_to_skip = std::countr_zero(rooks_and_queens);
 					square += squares_to_skip;
 
@@ -155,7 +155,6 @@ void Moves::generateMoves(const Player& player, const Player& opponent, const Ma
 						break;
 					}
 
-					if (square == 63) break;
 					rooks_and_queens >>= (squares_to_skip + 1);
 					square++;
 				}
@@ -416,10 +415,21 @@ bool Moves::isMoveLegal(unsigned short move) {
 	return false;
 }
 
-void Moves::orderMoves(const Player& player, const Player& opponent, Entry* tt_entry) {
+void Moves::orderMoves(const Player& player, const Player& opponent, const Entry* tt_entry, const std::array<unsigned short, 2>* killer_moves_at_ply) {
+	/*
+		Order of moves:
+			1. Move from TT if any
+			2. Winning captures (ordered by MVV-LVA)
+			3. Equal captures
+			4. Killer moves if any
+			5. Non-captures
+			6. Losing captures
+	*/
 	unsigned short best_cached_move = tt_entry ? tt_entry->best_move : 0;
 
 	for (int i = 0; i < num_moves; i++) {
+		scores[i] += i; // Ensure that two moves dont have the same scores
+
 		// Make best cached move first and assign maximum score
 		if (moves[i] == best_cached_move) {
 			moves[i] = moves[0];
@@ -430,14 +440,18 @@ void Moves::orderMoves(const Player& player, const Player& opponent, Entry* tt_e
 			continue;
 		}
 
-		scores[i] += i; // Ensure that two moves dont have the same scores
+		// Score of killer moves
+		if (killer_moves_at_ply && (moves[i] == (*killer_moves_at_ply)[0] || moves[i] == (*killer_moves_at_ply)[1])) {
+			scores[i] += 400;
+			continue;
+		}
 
 		location start_square = getStartSquare(moves[i]);
 		location final_square = getFinalSquare(moves[i]);
 		unsigned long long final_square_bitboard = 1LL << final_square;
 		unsigned short move_flag = getMoveFlag(moves[i]);
 
-		// The switch is a little bit faster than getPieceValue
+		// The switch is a little bit faster than getPieceValue, increases score for promotions
 		int piece_value = 0;
 		switch (move_flag) {
 		case pawn_move:
@@ -465,20 +479,20 @@ void Moves::orderMoves(const Player& player, const Player& opponent, Entry* tt_e
 			piece_value = 1000;
 			break;
 		case promotion_knight:
-			piece_value = 1000;
-			scores[i] += 3000;
+			piece_value = 3000;
+			scores[i] += 2000;
 			break;
 		case promotion_bishop:
-			piece_value = 1000;
-			scores[i] += 3000;
+			piece_value = 3000;
+			scores[i] += 2000;
 			break;
 		case promotion_rook:
-			piece_value = 1000;
-			scores[i] += 5000;
+			piece_value = 5000;
+			scores[i] += 4000;
 			break;
 		case promotion_queen:
-			piece_value = 1000;
-			scores[i] += 9000;
+			piece_value = 9000;
+			scores[i] += 8000;
 			break;
 		default:
 			break;
@@ -486,6 +500,7 @@ void Moves::orderMoves(const Player& player, const Player& opponent, Entry* tt_e
 
 		// Captures
 		if (final_square_bitboard & opponent.bitboards.friendly_pieces) {
+			scores[i] += 700; // So that equal captures are searched before non-captures 
 			int victim_value = getPieceValue(opponent, final_square);
 			scores[i] += victim_value;
 		}
@@ -671,7 +686,7 @@ inline unsigned long long slidingMoves(const MagicBitboard& magic_bitboard, unsi
 inline void addMovesFromAttacksBitboard(location start_square, bool is_in_check, unsigned long long squares_to_uncheck, 
 										unsigned long long bitboard_attacks, unsigned short move_flag, Moves* moves) {
 	int final_square = 0;
-	while (bitboard_attacks != 0) {
+	while (bitboard_attacks != 0 && final_square <= 63) {
 		int squares_to_skip = std::countr_zero(bitboard_attacks);
 		final_square += squares_to_skip;
 
@@ -679,10 +694,6 @@ inline void addMovesFromAttacksBitboard(location start_square, bool is_in_check,
 		if (canMove(is_in_check, final_square, squares_to_uncheck)) {
 			moves->addMove(move_flag, start_square, final_square);
 		}
-		
-		// If squares to skip is 63 (move to the last square) then squares to skip + 1 will be 64
-		// which is undefined behavior when bitwise shifting a 64 bit int
-		if (squares_to_skip == 63) break;
 
 		bitboard_attacks >>= (squares_to_skip + 1);
 		final_square++;

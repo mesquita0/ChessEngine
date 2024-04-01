@@ -3,6 +3,7 @@
 #include "Player.h"
 #include <climits>
 
-constexpr int checkmated_eval = INT_MIN + 1;
+constexpr int checkmated_eval = INT_MIN + 11;
+constexpr int checkmate_eval = -checkmated_eval;
 
-int Evaluate(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards, int depth_searched);
+int Evaluate(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);

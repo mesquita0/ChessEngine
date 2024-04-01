@@ -77,7 +77,7 @@ public:
 	unsigned short isMoveLegal(location start_square, location final_square);
 	bool isMoveLegal(unsigned short move);
 
-	void orderMoves(const Player& player, const Player& opponent, Entry* tt_entry);
+	void orderMoves(const Player& player, const Player& opponent, const Entry* tt_entry, const std::array<unsigned short, 2>* killer_moves_at_ply);
 	unsigned short getNextOrderedMove();
 };
 
@@ -100,3 +100,4 @@ inline bool isPromotion(unsigned short move) { return ((move & promotion_mask) =
 inline unsigned short getMoveFlag(unsigned short move) { return move & move_flag_mask; }
 inline location getStartSquare(unsigned short move) { return (move >> 6) & square_mask; }
 inline location getFinalSquare(unsigned short move) { return move & square_mask; }
+inline bool isCapture(unsigned short move, unsigned long long opponent_pieces) { return ( (1LL << getFinalSquare(move)) & opponent_pieces ); }
