@@ -1,11 +1,11 @@
 #pragma once
 #include "Locations.h"
 #include "Player.h"
-#include "TranspositionTable.h"
 #include <array>
 #include <climits>
 
 class MagicBitboards;
+struct Entry;
 
 constexpr int max_num_moves = 218;
 constexpr unsigned short castle_king_side = 0b0001 << 12;
@@ -73,9 +73,9 @@ public:
 	are defedend or attacks of pinned pieces that would leave the king in check if played */
 	void generateCaptures(Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);
 
-	unsigned short isMoveLegal(unsigned short move_flag, location start_square, location final_square);
-	unsigned short isMoveLegal(location start_square, location final_square);
-	bool isMoveLegal(unsigned short move);
+	unsigned short isMoveLegal (unsigned short move_flag, location start_square, location final_square) const;
+	unsigned short isMoveLegal (location start_square, location final_square) const;
+	bool isMoveLegal (unsigned short move) const;
 
 	void orderMoves(const Player& player, const Player& opponent, const Entry* tt_entry, const std::array<unsigned short, 2>* killer_moves_at_ply);
 	unsigned short getNextOrderedMove();
