@@ -389,7 +389,7 @@ void Moves::generateCaptures(Player& player, const Player& opponent, const Magic
 		addMovesFromAttacksBitboard(player.locations.king, false, 0, king_attacks, king_move, this);
 }
 
-unsigned short Moves::isMoveLegal(unsigned short move_flag, location start_square, location final_square) {
+unsigned short Moves::isMoveLegal (unsigned short move_flag, location start_square, location final_square) const {
 	unsigned short desired_move = (move_flag | (start_square << 6) | final_square);
 	for (const unsigned short move : *this) {
 		if (desired_move == move) return move;
@@ -398,7 +398,7 @@ unsigned short Moves::isMoveLegal(unsigned short move_flag, location start_squar
 	return 0;
 }
 
-unsigned short Moves::isMoveLegal(location start_square, location final_square) {
+unsigned short Moves::isMoveLegal (location start_square, location final_square) const {
 	unsigned short desired_move = (start_square << 6 | final_square);
 	for (const unsigned short move : *this) {
 		if (desired_move == (move & 0xfff)) return move;
@@ -407,7 +407,7 @@ unsigned short Moves::isMoveLegal(location start_square, location final_square) 
 	return 0;
 }
 
-bool Moves::isMoveLegal(unsigned short move) {
+bool Moves::isMoveLegal (unsigned short move) const {
 	for (const unsigned short m : *this) {
 		if (m == move) return true;
 	}
