@@ -10,7 +10,10 @@
 #include "TranspositionTable.h"
 #include "Zobrist.h"
 #include <algorithm>
+#include <array>
+#include <bit>
 #include <iostream>
+#include <vector>
 #include <string>
 
 constexpr int search_depth = 8;
@@ -38,8 +41,8 @@ int main() {
 	// Generate Zobrist keys and allocate transposition table
 	ZobristKeys zobrist_keys;
 	unsigned long long hash = zobrist_keys.positionToHash(first_to_move, second_to_move);
-	TranspositionTable transposition_table(256, first_to_move.bitboards.all_pieces); // Size in mb, must be a power of two
-	
+	TranspositionTable transposition_table(256); // Size in mb, must be a power of two
+
 	Player* player = &first_to_move;
 	Player* opponent = &second_to_move;
 
@@ -123,8 +126,8 @@ int main() {
 
 		MoveInfo move_info = makeMove(move, *player, *opponent, hash, magic_bitboards, zobrist_keys);
 
-		transposition_table.updateMoveRoot(move_info.capture_flag);
-		half_moves = hash_positions.updatePositions(move_info.capture_flag, getMoveFlag(move), move_info.hash, half_moves);
+		unsigned short move_flag = getMoveFlag(move);
+		half_moves = hash_positions.updatePositions(move_info.capture_flag, move_flag, move_info.hash, half_moves);
 
 		if (!player->is_white) full_moves++;
 

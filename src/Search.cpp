@@ -9,7 +9,6 @@
 #include "TranspositionTable.h"
 #include "Zobrist.h"
 #include <array>
-#include <bit>
 #include <climits>
 #include <vector>
 
@@ -37,8 +36,6 @@ SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponen
 SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves,
 						  const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt) {
 
-	uint8_t num_pieces = std::popcount(player.bitboards.all_pieces);
-
 	/*
 	UnmakeMove (and Search) won't revert back changes in attacks and squares_to_uncheck bitboards, since they are going
 	to be recomputed when the next move is made (since the board will change), but that is problematic if FindBestMove
@@ -63,8 +60,8 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 	unsigned long long current_hash = positions.last_hash();
 	
 	// Lookup transposition table from previous searches
-	Entry* position_tt = tt.get(current_hash, num_pieces, moves);
-	if (position_tt && position_tt->depth >= depth) {
+	Entry* position_tt = tt.get(current_hash);
+	if (position_tt && position_tt->depth >= depth && moves.isMoveLegal(position_tt->best_move)) {
 		switch (position_tt->node_flag) {
 		case Exact:
 			return { position_tt->eval, position_tt->best_move };
@@ -102,7 +99,7 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 	}
 
 	positions.unbranch(branch_id, start);
-	tt.store(current_hash, best_move, depth, Exact, alpha, num_pieces, position_tt);
+	tt.store(current_hash, best_move, depth, Exact, alpha);
 
 	// Restore attacks and squares to uncheck bitboards
 	opponent.bitboards.attacks = attacks;
@@ -117,8 +114,6 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
 		   int half_moves, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, 
 		   std::vector<std::array<unsigned short, 2>>& killer_moves, TranspositionTable& tt) {
-
-	uint8_t num_pieces = std::popcount(player.bitboards.all_pieces);
 
 	// Check draws
  	GameOutcome game_outcome = getGameOutcome(player, opponent, positions, half_moves);
@@ -145,9 +140,9 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 	// Lookup transposition table from previous searches
 	unsigned long long current_hash = positions.last_hash();
 	unsigned short best_move = 0;
-	bool has_low_bound = false;
-	Entry* position_tt = tt.get(current_hash, num_pieces, moves);
-	if (position_tt && position_tt->depth >= depth) {
+	bool have_low_bound = false;
+	Entry* position_tt = tt.get(current_hash);
+	if (position_tt && position_tt->depth >= depth && moves.isMoveLegal(position_tt->best_move)) {
 		switch (position_tt->node_flag) {
 		case Exact:
 			return position_tt->eval;
@@ -160,7 +155,7 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 			if (alpha < position_tt->eval) {
 				alpha = position_tt->eval;
 				best_move = position_tt->best_move;
-				has_low_bound = true;
+				have_low_bound = true;
 			}
 			break;
 		}
@@ -192,7 +187,7 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 		// Fail high
 		if (eval >= beta) {
 			positions.unbranch(branch_id, start);
-			tt.store( current_hash, move, depth, LowerBound, eval, num_pieces, position_tt);
+			tt.store( current_hash, move, depth, LowerBound, eval );
 
 			// Killer moves
 			if (!isCapture(move, opponent.bitboards.friendly_pieces) && killer_moves[depth][0] != move) {
@@ -207,7 +202,7 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 			best_move = move;
 			did_fail_low = false;
 		} 
-		else if (eval > fail_low_best_eval && did_fail_low && !has_low_bound) {
+		else if (eval > fail_low_best_eval && did_fail_low && !have_low_bound) {
 			/*
 				If fails low but has a low bound from previous searches, best move should remain the one from TT instead of the best move from 
 				current search, since that can only happen if the result from the TT was searched at a higher depth than current search.
@@ -219,12 +214,11 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 
 	positions.unbranch(branch_id, start);
 
-
 	if (did_fail_low) {
-		tt.store(current_hash, best_move, depth, UpperBound, fail_low_best_eval, num_pieces, position_tt);
+		tt.store(current_hash, best_move, depth, UpperBound, fail_low_best_eval);
 	}
 	else {
-		tt.store(current_hash, best_move, depth, Exact, alpha, num_pieces, position_tt);
+		tt.store(current_hash, best_move, depth, Exact, alpha);
 	}
 	
 	return alpha;

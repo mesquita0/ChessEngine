@@ -2,7 +2,7 @@
 #include "MagicBitboards.h"
 #include "Player.h"
 #include <array>
-#include <bit>
+#include <bitset>
 #include <climits>
 
 constexpr unsigned long long Afile = 0x8080808080808080;
@@ -39,8 +39,10 @@ int Evaluate(const Player& player, const Player& opponent, const MagicBitboards&
 	score_player += PawnStructure(player);
 	score_opponent += PawnStructure(opponent);
 
-	score_player += std::popcount(player.bitboards.attacks);
-	score_opponent += std::popcount(opponent.bitboards.attacks);
+	std::bitset<64> attacks_player{ player.bitboards.attacks };
+	std::bitset<64> attacks_opponent{ opponent.bitboards.attacks };
+	score_player += attacks_player.count();
+	score_opponent += attacks_opponent.count();
 
 	// Castle
 	if (player.can_castle_king_side) score_player += 2;
