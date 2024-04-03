@@ -4,6 +4,16 @@
 #include <bit>
 #include <cstdint>
 
+void Bucket::updateSmallestDepth() {
+	uint8_t smallest_depth = 0xff;
+	for (int i = 0; i < bucket_size; i++) {
+		if (bucket[i].depth < smallest_depth) {
+			smallest_depth = bucket[i].depth;
+			index_smallest_depth = i;
+		}
+	}
+}
+
 TranspositionTable::TranspositionTable(size_t size_mb, uint64_t all_pieces) {
 	size_t max_entries = size_mb * 1024 * 1024 / sizeof(Bucket);
 	table.resize(max_entries);
@@ -28,7 +38,9 @@ void TranspositionTable::store(uint64_t hash, unsigned short best_move, uint8_t 
 	// Populate free first space if any
 	if (bucket.index_free < bucket_size) {
 		bucket[bucket.index_free] = Entry{ unsigned(hash >> 32), best_move, depth, node_flag, eval, current_generation, num_pieces };
-		bucket.index_free++;
+		if (++bucket.index_free == bucket_size) 
+			bucket.updateSmallestDepth();
+
 		return;
 	}
 	
@@ -51,17 +63,8 @@ void TranspositionTable::store(uint64_t hash, unsigned short best_move, uint8_t 
 	// Always replace entry with smallest depth
 	uint8_t prev_smallest_depth = bucket[bucket.index_smallest_depth].depth;
 	bucket[bucket.index_smallest_depth] = Entry{ unsigned(hash >> 32), best_move, depth, node_flag, eval, current_generation, num_pieces };
-	
-	// Find new smallest depth
-	if (depth > prev_smallest_depth) {
-		uint8_t new_smallest_depth = 0xff;
-		for (int i = 0; i < bucket_size; i++) {
-			if (bucket[i].depth < new_smallest_depth) {
-				new_smallest_depth = bucket[i].depth;
-				bucket.index_smallest_depth = i;
-			}
-		}
-	}
+	if (depth > prev_smallest_depth) 
+		bucket.updateSmallestDepth();
 }
 
 Entry* TranspositionTable::get(uint64_t hash, uint32_t num_pieces, const Moves& moves) {
@@ -76,8 +79,8 @@ Entry* TranspositionTable::get(uint64_t hash, uint32_t num_pieces, const Moves& 
 	return nullptr;
 }
 
-void TranspositionTable::updateMoveRoot(short capture_flag) { 
+void TranspositionTable::updateMoveRoot(short capture_flag, short move_flag) {
 	current_generation++; 
-	if (capture_flag != no_capture) 
+	if (capture_flag != no_capture || move_flag == en_passant) 
 		num_pieces_root--; 
 }

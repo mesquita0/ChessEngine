@@ -5,14 +5,14 @@
 
 class Moves;
 
-enum nodeFlag : uint8_t { Exact, UpperBound, LowerBound };
+enum nodeFlag : uint8_t { Invalid, Exact, UpperBound, LowerBound };
 constexpr int bucket_size = 5;
 
 struct Entry {
 	uint32_t hash = 0;
 	unsigned short best_move = 0;
 	uint8_t depth = 0;
-	nodeFlag node_flag;
+	nodeFlag node_flag = Invalid;
 	int16_t eval = 0;
 	uint8_t generation_last_used = 0;
 	uint8_t num_pieces = 0;
@@ -29,11 +29,13 @@ public:
 
 	inline Entry* begin() { return &this->bucket[0]; }
 	inline const Entry* begin() const { return &this->bucket[0]; }
-	inline Entry* end() { return &this->bucket[bucket_size]; }
-	inline const Entry* end() const { return &this->bucket[bucket_size]; }
+	inline Entry* end() { return &this->bucket[0] + index_free; }
+	inline const Entry* end() const { return &this->bucket[0] + index_free; }
 
 	inline Entry operator[] (int i) const { return bucket[i]; }
 	inline Entry& operator[] (int i) { return bucket[i]; }
+	
+	void updateSmallestDepth();
 };
 
 class TranspositionTable {
@@ -51,5 +53,5 @@ public:
 
 	Entry* get(uint64_t hash, uint32_t num_pieces, const Moves& moves);
 
-	void updateMoveRoot(short capture_flag);
+	void updateMoveRoot(short capture_flag, short move_flag);
 };

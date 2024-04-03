@@ -14,7 +14,7 @@
 #include <vector>
 
 int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
-		   int half_moves, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, 
+		   int half_moves, int num_pieces, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, 
 		   std::vector<std::array<unsigned short, 2>>& killer_moves, TranspositionTable& tt);
 int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys);
 
@@ -37,7 +37,7 @@ SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponen
 SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves,
 						  const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt) {
 
-	uint8_t num_pieces = std::popcount(player.bitboards.all_pieces);
+	 int num_pieces = std::popcount(player.bitboards.all_pieces);
 
 	/*
 	UnmakeMove (and Search) won't revert back changes in attacks and squares_to_uncheck bitboards, since they are going
@@ -88,8 +88,9 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 
 		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash, magic_bitboards, zobrist_keys);
 		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
+		int new_num_pieces = num_pieces - ((mv_inf.capture_flag != no_capture || move_flag == en_passant) ? 1 : 0);
 		
-		int eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, magic_bitboards, zobrist_keys, killer_moves, tt);
+		int eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
 		
 		unmakeMove(move, player, opponent, mv_inf, magic_bitboards);
 		positions.clear();
@@ -115,10 +116,8 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 }
 
 int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
-		   int half_moves, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, 
+		   int half_moves, int num_pieces, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, 
 		   std::vector<std::array<unsigned short, 2>>& killer_moves, TranspositionTable& tt) {
-
-	uint8_t num_pieces = std::popcount(player.bitboards.all_pieces);
 
 	// Check draws
  	GameOutcome game_outcome = getGameOutcome(player, opponent, positions, half_moves);
@@ -182,8 +181,9 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 
 		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash, magic_bitboards, zobrist_keys);
 		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
+		int new_num_pieces = num_pieces - ((mv_inf.capture_flag == no_capture || move_flag == en_passant) ? 0 : 1);
 
-		int eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, magic_bitboards, zobrist_keys, killer_moves, tt);
+		int eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
 
 		unmakeMove(move, player, opponent, mv_inf, magic_bitboards);
 		positions.clear();

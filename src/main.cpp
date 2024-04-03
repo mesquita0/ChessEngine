@@ -123,8 +123,9 @@ int main() {
 
 		MoveInfo move_info = makeMove(move, *player, *opponent, hash, magic_bitboards, zobrist_keys);
 
-		transposition_table.updateMoveRoot(move_info.capture_flag);
-		half_moves = hash_positions.updatePositions(move_info.capture_flag, getMoveFlag(move), move_info.hash, half_moves);
+		short move_flag = getMoveFlag(move);
+		transposition_table.updateMoveRoot(move_info.capture_flag, move_flag);
+		half_moves = hash_positions.updatePositions(move_info.capture_flag, move_flag, move_info.hash, half_moves);
 
 		if (!player->is_white) full_moves++;
 
