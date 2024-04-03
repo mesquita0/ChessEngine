@@ -21,9 +21,6 @@
     <ClCompile Include="Position.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Locations.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Moves.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

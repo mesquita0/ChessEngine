@@ -151,7 +151,6 @@
     <ClCompile Include="Perft.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="Moves.cpp" />
-    <ClCompile Include="Locations.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Search.cpp" />
     <ClCompile Include="TranspositionTable.cpp" />

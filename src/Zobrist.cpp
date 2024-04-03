@@ -2,11 +2,11 @@
 #include "Locations.h"
 #include "Position.h"
 #include <array>
+#include <bit>
 #include <climits>
 #include <random>
 
-template<size_t N>
-static uint64_t addPiecesToHash(uint64_t hash, std::array<location, N> locations, uint64_t* piece_hash);
+static uint64_t addPiecesToHash(uint64_t hash, uint64_t piece_bitboard, uint64_t* piece_hash);
 
 ZobristKeys::ZobristKeys() {
 	std::random_device rd;
@@ -47,16 +47,16 @@ uint64_t ZobristKeys::positionToHash(const Player& player, const Player& opponen
 	const Player& black = player.is_white ? opponent : player;
 	
 	// Add all pieces to hash
-	hash = addPiecesToHash(hash, white.locations.pawns, white_pawn);
-	hash = addPiecesToHash(hash, white.locations.knights, white_knight);
-	hash = addPiecesToHash(hash, white.locations.bishops, white_bishop);
-	hash = addPiecesToHash(hash, white.locations.rooks, white_rook);
-	hash = addPiecesToHash(hash, white.locations.queens, white_queen);
-	hash = addPiecesToHash(hash, black.locations.pawns, black_pawn);
-	hash = addPiecesToHash(hash, black.locations.knights, black_knight);
-	hash = addPiecesToHash(hash, black.locations.bishops, black_bishop);
-	hash = addPiecesToHash(hash, black.locations.rooks, black_rook);
-	hash = addPiecesToHash(hash, black.locations.queens, black_queen);
+	hash = addPiecesToHash(hash, white.bitboards.pawns, white_pawn);
+	hash = addPiecesToHash(hash, white.bitboards.knights, white_knight);
+	hash = addPiecesToHash(hash, white.bitboards.bishops, white_bishop);
+	hash = addPiecesToHash(hash, white.bitboards.rooks, white_rook);
+	hash = addPiecesToHash(hash, white.bitboards.queens, white_queen);
+	hash = addPiecesToHash(hash, black.bitboards.pawns, black_pawn);
+	hash = addPiecesToHash(hash, black.bitboards.knights, black_knight);
+	hash = addPiecesToHash(hash, black.bitboards.bishops, black_bishop);
+	hash = addPiecesToHash(hash, black.bitboards.rooks, black_rook);
+	hash = addPiecesToHash(hash, black.bitboards.queens, black_queen);
 
 	hash ^= white_king[white.locations.king];
 	hash ^= black_king[black.locations.king];
@@ -74,12 +74,17 @@ uint64_t ZobristKeys::positionToHash(const Player& player, const Player& opponen
 	return hash;
 }
 
-template<size_t N>
-static uint64_t addPiecesToHash(uint64_t hash, std::array<location, N> locations, uint64_t* piece_hash) {
-	for (location loc : locations) {
-		if (loc == 0) continue;
-		loc &= 0b111111;
+static uint64_t addPiecesToHash(uint64_t hash, uint64_t piece_bitboard, uint64_t* piece_hash) {
+	
+	location loc = 0;
+	while (piece_bitboard != 0 && loc <= 63) {
+		int squares_to_skip = std::countr_zero(piece_bitboard);
+		loc += squares_to_skip;
+
 		hash ^= piece_hash[loc];
+
+		piece_bitboard >>= (squares_to_skip + 1);
+		loc++;
 	}
 
 	return hash;

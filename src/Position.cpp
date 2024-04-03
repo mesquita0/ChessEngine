@@ -126,31 +126,26 @@ Position FENToPosition(const string& FEN, const MagicBitboards& magic_bitboards)
 		case 'p':
 			current_player.bitboards.pawns |= (1LL << square);
 			current_player.num_pawns++;
-			current_player.locations.addPawn(square);
 			break;
 
 		case 'n':
 			current_player.bitboards.knights |= (1LL << square);
 			current_player.num_knights++;
-			current_player.locations.addKnight(square);
 			break;
 
 		case 'b':
 			current_player.bitboards.bishops |= (1LL << square);
 			current_player.num_bishops++;
-			current_player.locations.addBishop(square);
 			break;
 
 		case 'r':
 			current_player.bitboards.rooks |= (1LL << square);
 			current_player.num_rooks++;
-			current_player.locations.addRook(square);
 			break;
 
 		case 'q':
 			current_player.bitboards.queens |= (1LL << square);
 			current_player.num_queens++;
-			current_player.locations.addQueen(square);
 			break;
 
 		case 'k':
@@ -186,12 +181,10 @@ Position FENToPosition(const string& FEN, const MagicBitboards& magic_bitboards)
 	white.bitboards.all_pieces = white.bitboards.friendly_pieces | black.bitboards.friendly_pieces;
 	black.bitboards.all_pieces = white.bitboards.friendly_pieces | black.bitboards.friendly_pieces;
 
-	AttacksInfo white_attack = generateAttacksInfo(true, white.locations, white.bitboards.all_pieces, white.num_pawns,
-												   white.num_knights, white.num_bishops, white.num_rooks, white.num_queens,
-												   black.locations.king, magic_bitboards);
-	AttacksInfo black_attack = generateAttacksInfo(false, black.locations, black.bitboards.all_pieces, black.num_pawns,
-												   black.num_knights, black.num_bishops, black.num_rooks, black.num_queens,
-												   white.locations.king, magic_bitboards);
+	AttacksInfo white_attack = generateAttacksInfo(true, white.bitboards, white.bitboards.all_pieces,
+												   white.locations.king, black.locations.king, magic_bitboards);
+	AttacksInfo black_attack = generateAttacksInfo(false, black.bitboards, black.bitboards.all_pieces,
+												   black.locations.king, white.locations.king, magic_bitboards);
 
 	white.bitboards.attacks = white_attack.attacks_bitboard;
 	white.bitboards.squares_to_uncheck = black_attack.opponent_squares_to_uncheck;

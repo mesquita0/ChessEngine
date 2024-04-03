@@ -81,17 +81,15 @@ public:
 	unsigned short getNextOrderedMove();
 };
 
-AttacksInfo generateAttacksInfo(bool is_white, const Locations& locations, unsigned long long all_pieces,
-								int num_pawns, int num_knights, int num_bishops, int num_rooks, int num_queens,
-							    location opponent_king_location, const MagicBitboards& magic_bitboards);
+AttacksInfo generateAttacksInfo(bool is_white, const BitBoards& bitboards, unsigned long long all_pieces,
+							    location player_king_location, location opponent_king_location,
+								const MagicBitboards& magic_bitboards);
 
-inline unsigned long long generateAttacksBitBoard(bool is_white, const Locations& locations, unsigned long long all_pieces,
-												  int num_pawns, int num_knights, int num_bishops, int num_rooks, int num_queens,
-											      const MagicBitboards& magic_bitboards) {
+inline unsigned long long generateAttacksBitBoard(bool is_white, const BitBoards& bitboards, unsigned long long all_pieces,
+												  location player_king_location, const MagicBitboards& magic_bitboards) {
 
-	// Passing 64 as king location will skip all calculations of squares to uncheck, since they will not be used.
-	return generateAttacksInfo(is_white, locations, all_pieces, num_pawns, num_knights, 
-						       num_bishops, num_rooks, num_queens, 64, magic_bitboards).attacks_bitboard;
+	// Passing 64 as opponent king location will skip all calculations of squares to uncheck, since they will not be used.
+	return generateAttacksInfo(is_white, bitboards, all_pieces, player_king_location, 64, magic_bitboards).attacks_bitboard;
 }
 
 void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitboards);
