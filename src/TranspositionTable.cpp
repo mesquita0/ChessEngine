@@ -24,7 +24,7 @@ TranspositionTable::TranspositionTable(size_t size_mb, uint64_t all_pieces) {
 
 void TranspositionTable::store(uint64_t hash, unsigned short best_move, uint8_t depth, nodeFlag node_flag, int16_t eval, uint8_t num_pieces, Entry* pos_entry) {
 
-	// If position is alredy stored in the bucket, to avoid storing the same position multiple times
+	// Avoid storing the same position multiple times
 	if (pos_entry) {
 		if (pos_entry->depth < depth || (pos_entry->depth == depth && pos_entry->node_flag != Exact && pos_entry->node_flag == Exact)) {
 			*pos_entry = Entry{ unsigned(hash >> 32), best_move, depth, node_flag, eval, current_generation, num_pieces };

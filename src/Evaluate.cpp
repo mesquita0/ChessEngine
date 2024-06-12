@@ -23,7 +23,7 @@ int Evaluate(const Player& player, const Player& opponent, const MagicBitboards&
 	if (player.bitboards.king & opponent.bitboards.attacks) {
 		unsigned long long king_attacks = magic_bitboards.king_attacks_array[player.locations.king];
 		king_attacks &= ~opponent.bitboards.attacks; // Remove defended squares
-		king_attacks &= ~player.bitboards.all_pieces; // Remove occupied squares
+		king_attacks &= ~player.bitboards.friendly_pieces; // Remove squares occupied by player's pieces
 
 		// If player's king can't move
 		if (!king_attacks) {

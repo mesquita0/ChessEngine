@@ -10,10 +10,11 @@
 #include "TranspositionTable.h"
 #include "Zobrist.h"
 #include <algorithm>
+#include <chrono>
 #include <iostream>
 #include <string>
 
-constexpr int search_depth = 8;
+constexpr std::chrono::milliseconds search_time(5000);
 
 using std::cout;
 
@@ -57,6 +58,7 @@ int main() {
 
 	while (moves.num_moves != 0) {
 
+		cout << "Fen: " << PositionToFEN(*player, *opponent, half_moves, full_moves) << '\n';
 		printBoard(*player, *opponent);
 		cout << (((*player).is_white) ? "White to move: " : "Black to move: ");
 		unsigned short move = 0;
@@ -65,7 +67,7 @@ int main() {
 			while (true) {
 				std::string move_str;
 				std::cin >> move_str;
-				std::transform(move_str.begin(), move_str.end(), move_str.begin(), std::tolower);
+				std::transform(move_str.begin(), move_str.end(), move_str.begin(), (int (*)(int))std::tolower);
 
 				// Moves that are not promotions
 				if (move_str.length() == 4) {
@@ -112,11 +114,12 @@ int main() {
 			}
 		}
 		else {
-			SearchResult search_result = FindBestMoveItrDeepening(search_depth, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys, transposition_table);
+			SearchResult search_result = FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys, transposition_table);
 			move = search_result.best_move;
 			cout << locationToNotationSquare((move >> 6) & 0b111111);
 			cout << locationToNotationSquare(move & 0b111111);
-			cout << " " << search_result.evaluation;
+			cout << " Evaluation: " << search_result.evaluation;
+			cout << " Depth: " << search_result.depth;
 			cout << "\n\n";
 			is_engine_turn = false;
 		}
@@ -139,6 +142,7 @@ int main() {
 		moves.generateMoves(*player, *opponent, magic_bitboards);
 	}
 
+	cout << "Fen: " << PositionToFEN(*player, *opponent, half_moves, full_moves) << '\n';
 	printBoard(*player, *opponent);
 
 	if (game_outcome == ongoing) {
