@@ -9,6 +9,7 @@
 #include "TranspositionTable.h"
 #include "Zobrist.h"
 #include <array>
+#include <atomic>
 #include <bit>
 #include <chrono>
 #include <climits>
@@ -20,10 +21,11 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 		   std::vector<std::array<unsigned short, 2>>& killer_moves, TranspositionTable& tt);
 int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys);
 
-bool timed_out = false;
+std::atomic_bool timed_out = false;
+int search_id = 0; // Only written by main thread, does not need to be atomic
 
-static void stopSearch() {
-	timed_out = true;
+static void stopSearch(int id) {
+	if (id == search_id) timed_out = true;
 }
 
 SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves,
@@ -31,10 +33,11 @@ SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& pl
 	SearchResult result = { 0, 0, 0 };
 
 	// Set timer to search
+	search_id++;
 	timed_out = false;
-	std::thread timer([&]() {
+	std::thread timer([time]() {
 		std::this_thread::sleep_for(time);
-		stopSearch();
+		stopSearch(search_id);
 	});
 	
 	int depth = 1;
@@ -44,11 +47,24 @@ SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& pl
 		
 		// Ignore result if search was canceled imediately, without being able to look at any moves
 		if (r.best_move != 0) result = r;
-
-		// TODO: Store checkmate in x moves do be displayed in evaluation
 	}
 
 	timer.detach();
+
+	return result;
+}
+
+
+SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves,
+									  const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt) {
+	SearchResult result = { 0, 0, 0 };
+	timed_out = false;
+
+	for (int i = 1; i <= depth; i++) {
+		result = FindBestMove(i, player, opponent, positions, half_moves, magic_bitboards, zobrist_keys, tt);
+		
+		if (result.evaluation == checkmated_eval || result.evaluation == checkmate_eval) break;
+	}
 
 	return result;
 }
@@ -87,7 +103,7 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 	if (position_tt && position_tt->depth >= depth) {
 		switch (position_tt->node_flag) {
 		case Exact:
-			return { position_tt->eval, position_tt->best_move, (unsigned short)depth };
+			return { position_tt->eval, position_tt->best_move, position_tt->depth };
 
 		case UpperBound:
 			beta = position_tt->eval;
@@ -125,7 +141,8 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 	}
 
 	positions.unbranch(branch_id, start);
-	if (!timed_out) tt.store(current_hash, best_move, depth, Exact, alpha, num_pieces, position_tt);
+	nodeFlag nf = timed_out ? LowerBound : Exact;
+	tt.store(current_hash, best_move, depth, nf, alpha, num_pieces, position_tt);
 
 	// Restore attacks and squares to uncheck bitboards
 	opponent.bitboards.attacks = attacks;

@@ -35,7 +35,7 @@ void TranspositionTable::store(uint64_t hash, unsigned short best_move, uint8_t 
 	int index = hash & index_mask;
 	Bucket& bucket = table[index];
 
-	// Populate free first space if any
+	// Populate first free space if any
 	if (bucket.index_free < bucket_size) {
 		bucket[bucket.index_free] = Entry{ unsigned(hash >> 32), best_move, depth, node_flag, eval, current_generation, num_pieces };
 		if (++bucket.index_free == bucket_size) 

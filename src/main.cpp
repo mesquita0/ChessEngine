@@ -14,18 +14,79 @@
 #include <iostream>
 #include <string>
 
-constexpr std::chrono::milliseconds search_time(5000);
+constexpr int default_time = 5000;
 
 using std::cout;
 
-int main() {
+int main(int argc, char* argv[]) {
+
+	bool quiet_mode = false;
+	int fixed_depth = 0;
+	std::chrono::milliseconds search_time(default_time);
+	
+	// TODO: -h  --fen
+	// Flags 
+	for (int i = 1; i < argc; i++) {
+		if (!strcmp("-q", argv[i])) {
+			quiet_mode = true;
+		}
+		else if (!strcmp("-t", argv[i])) {
+			if (++i < argc) {
+				int time_ms;
+
+				try { time_ms = std::stoi(argv[i]); }
+				catch (std::exception const& e) {
+					cout << "Couldn't parse time \"" << argv[i] << "\" to a number.\n";
+					return 1;
+				}
+
+				search_time = std::chrono::milliseconds(time_ms);
+			}
+			else {
+				cout << "No time was provided with the time flag.\n";
+				return 2;
+			}
+		}
+		else if (!strcmp("-d", argv[i])) {
+			if (++i < argc) {
+				try { fixed_depth = std::stoi(argv[i]); }
+				catch (std::exception const& e) {
+					cout << "Couldn't parse depth \"" << argv[i] << "\" to a number.\n";
+					return 3;
+				}
+
+				if (fixed_depth <= 0) {
+					cout << "Depth should be greater than 0.\n";
+					return 4;
+				}
+			}
+			else {
+				cout << "No depth was provided with the depth flag.\n";
+				return 5;
+			}
+		}
+		else {
+			cout << "Unknown parameter: " << argv[i] << '\n';
+			return 6;
+		}
+	}
+
+	if (search_time.count() != default_time && fixed_depth != 0) {
+		cout << "Specifying both search time and depth is not supported.\n";
+		return 7;
+	}
+
+	if (search_time.count() < 30) {
+		cout << "Time per move should be at least 30 ms.\n";
+		return 8;
+	}
 
 	// Load Magic Bitboards
 	MagicBitboards magic_bitboards;
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) {
 		cout << "Couldn't load Magic Bitboards file.";
-		return 1;
+		return 9;
 	}
 
 	// Set up initial position
@@ -33,7 +94,7 @@ int main() {
 	auto [first_to_move, second_to_move, half_moves, full_moves] = FENToPosition(FEN, magic_bitboards);
 	if (full_moves == -1) {
 		cout << "Invalid Fen position.\n";
-		return 2;
+		return 10;
 	}
 
 	// Generate Zobrist keys and allocate transposition table
@@ -59,8 +120,10 @@ int main() {
 	while (moves.num_moves != 0) {
 
 		cout << "Fen: " << PositionToFEN(*player, *opponent, half_moves, full_moves) << '\n';
-		printBoard(*player, *opponent);
-		cout << (((*player).is_white) ? "White to move: " : "Black to move: ");
+		if (!quiet_mode) {
+			printBoard(*player, *opponent);
+			cout << (((*player).is_white) ? "White to move: " : "Black to move: ");
+		}
 		unsigned short move = 0;
 	
 		if (!is_engine_turn) {
@@ -114,13 +177,42 @@ int main() {
 			}
 		}
 		else {
-			SearchResult search_result = FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys, transposition_table);
+			// Search best move
+			SearchResult search_result;
+			if (fixed_depth)
+				search_result = FindBestMoveItrDeepening(fixed_depth, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys, transposition_table);
+			else
+				search_result = FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys, transposition_table);
+			
+			// Print best move
 			move = search_result.best_move;
 			cout << locationToNotationSquare((move >> 6) & 0b111111);
 			cout << locationToNotationSquare(move & 0b111111);
-			cout << " Evaluation: " << search_result.evaluation;
-			cout << " Depth: " << search_result.depth;
-			cout << "\n\n";
+			if (isPromotion(move)) {
+				unsigned short promotion_flag = getMoveFlag(move);
+
+				switch (promotion_flag) {
+				case promotion_knight:
+					cout << 'n';
+					break;
+				case promotion_bishop:
+					cout << 'b';
+					break;
+				case promotion_rook:
+					cout << 'r';
+					break;
+				case promotion_queen:
+					cout << 'q';
+					break;
+				}
+			}
+
+			if (!quiet_mode){
+				cout << " Evaluation: " << search_result.evaluation;
+				cout << " Depth: " << search_result.depth;
+				cout << '\n';
+			}
+			cout << "\n";
 			is_engine_turn = false;
 		}
 
@@ -143,7 +235,9 @@ int main() {
 	}
 
 	cout << "Fen: " << PositionToFEN(*player, *opponent, half_moves, full_moves) << '\n';
-	printBoard(*player, *opponent);
+	if (!quiet_mode) {
+		printBoard(*player, *opponent);
+	}
 
 	if (game_outcome == ongoing) {
 		if (player->bitboards.king & opponent->bitboards.attacks) {	// If Player's king is attacked
@@ -176,5 +270,5 @@ int main() {
 		break;
 
 	}
-	cout << PositionToFEN(*player, *opponent, 0, 1);
+	cout << "Fen: " << PositionToFEN(*player, *opponent, 0, 1);
 }
