@@ -3,7 +3,7 @@
 #include "Moves.h"
 #include "Zobrist.h"
 
-MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
+MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash) {
 	unsigned short flag = getMoveFlag(move);
 	location start_square = getStartSquare(move);
 	location final_square = getFinalSquare(move);
@@ -390,7 +390,7 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 
 	// Update attacks and squares to uncheck bitboards
 	AttacksInfo player_attacks = generateAttacksInfo(player.is_white, player.bitboards, player.bitboards.all_pieces,
-													 player.locations.king, opponent.locations.king, magic_bitboards);
+													 player.locations.king, opponent.locations.king);
 
 	player.bitboards.attacks = player_attacks.attacks_bitboard;
 	opponent.bitboards.squares_to_uncheck = player_attacks.opponent_squares_to_uncheck;
@@ -398,7 +398,7 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 	// Set opponent's pins, since opponent is next to play
 	player.move_id++;
 	opponent.move_id++;
-	setPins(opponent, player, magic_bitboards);
+	setPins(opponent, player);
 
 	// Flip turn to move
 	hash ^= zobrist_keys.is_black_to_move;
@@ -406,7 +406,7 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 	return { player_could_castle_king_side, player_could_castle_queen_side, opponent_could_castle_king_side, opponent_could_castle_queen_side, opponent_en_passant_target, capture_type, hash };
 }
 
-void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info, const MagicBitboards& magic_bitboards) {
+void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info) {
 	unsigned short flag = getMoveFlag(move);
 	location start_square = getStartSquare(move);
 	location final_square = getFinalSquare(move);
@@ -567,5 +567,5 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 	// Reset player's pins, since player is next to play
 	player.move_id++;
 	opponent.move_id++;
-	setPins(player, opponent, magic_bitboards);
+	setPins(player, opponent);
 }

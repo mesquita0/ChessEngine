@@ -4,7 +4,6 @@
 #include <array>
 #include <climits>
 
-class MagicBitboards;
 struct Entry;
 
 constexpr int max_num_moves = 218;
@@ -67,11 +66,11 @@ public:
 	inline unsigned short operator[] (int i) const { return moves[i]; }
 	inline unsigned short& operator[] (int i) { return moves[i]; }
 
-	void generateMoves(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);
+	void generateMoves(const Player& player, const Player& opponent);
 
 	/* Updates player's attack bitboard, does not include king attacks to squares that 
 	are defedend or attacks of pinned pieces that would leave the king in check if played */
-	void generateCaptures(Player& player, const Player& opponent, const MagicBitboards& magic_bitboards);
+	void generateCaptures(Player& player, const Player& opponent);
 
 	unsigned short isMoveLegal (unsigned short move_flag, location start_square, location final_square) const;
 	unsigned short isMoveLegal (location start_square, location final_square) const;
@@ -82,17 +81,16 @@ public:
 };
 
 AttacksInfo generateAttacksInfo(bool is_white, const BitBoards& bitboards, unsigned long long all_pieces,
-							    location player_king_location, location opponent_king_location,
-								const MagicBitboards& magic_bitboards);
+							    location player_king_location, location opponent_king_location);
 
 inline unsigned long long generateAttacksBitBoard(bool is_white, const BitBoards& bitboards, unsigned long long all_pieces,
-												  location player_king_location, const MagicBitboards& magic_bitboards) {
+												  location player_king_location) {
 
 	// Passing 64 as opponent king location will skip all calculations of squares to uncheck, since they will not be used.
-	return generateAttacksInfo(is_white, bitboards, all_pieces, player_king_location, 64, magic_bitboards).attacks_bitboard;
+	return generateAttacksInfo(is_white, bitboards, all_pieces, player_king_location, 64).attacks_bitboard;
 }
 
-void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitboards);
+void setPins(Player& player, Player& opponent);
 
 inline bool isPromotion(unsigned short move) { return ((move & promotion_mask) == promotion); }
 inline unsigned short getMoveFlag(unsigned short move) { return move & move_flag_mask; }

@@ -20,13 +20,13 @@ using std::array;
 inline unsigned long long slidingMoves(const MagicBitboard& magic_bitboard, unsigned long long pieces);
 inline void addMovesFromAttacksBitboard(location start_square, bool is_in_check, unsigned long long squares_to_uncheck, 
 										unsigned long long bitboard_attacks, unsigned short move_flag, Moves* moves);
-inline unsigned long long squaresToUncheckBishop(location opponent_king_location, location bishop_location, const MagicBitboards& magic_bitboards);
-inline unsigned long long squaresToUncheckRook(location opponent_king_location, location rook_location, const MagicBitboards& magic_bitboards);
+inline unsigned long long squaresToUncheckBishop(location opponent_king_location, location bishop_location);
+inline unsigned long long squaresToUncheckRook(location opponent_king_location, location rook_location);
 inline bool canMove(bool is_in_check, location final_square, unsigned long long squares_to_uncheck);
 inline int getPieceValue(const Player& player, location square);
-void setPin(Player& player, const Player& opponent, location piece_location, bool is_pin_diagonal, const MagicBitboards& magic_bitboards);
+void setPin(Player& player, const Player& opponent, location piece_location, bool is_pin_diagonal);
 
-void Moves::generateMoves(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards) {
+void Moves::generateMoves(const Player& player, const Player& opponent) {
 	this->num_moves = 0;
 	bool is_in_check = false;
 
@@ -152,7 +152,7 @@ void Moves::generateMoves(const Player& player, const Player& opponent, const Ma
 					int squares_to_skip = std::countr_zero(rooks_and_queens);
 					square += squares_to_skip;
 
-					unsigned long long squares_to_uncheck = squaresToUncheckRook(player.locations.king, square, magic_bitboards);
+					unsigned long long squares_to_uncheck = squaresToUncheckRook(player.locations.king, square);
 					if (((squares_to_uncheck ^ (1LL << square)) & all_pieces) == 0) {
 						can_en_passant = false;
 						break;
@@ -263,7 +263,7 @@ void Moves::generateMoves(const Player& player, const Player& opponent, const Ma
 	}
 }
 
-void Moves::generateCaptures(Player& player, const Player& opponent, const MagicBitboards& magic_bitboards) {
+void Moves::generateCaptures(Player& player, const Player& opponent) {
 	player.bitboards.attacks = 0;
 	unsigned long long opponent_pieces = opponent.bitboards.friendly_pieces;
 	if (player.bitboards.king & opponent.bitboards.attacks) opponent_pieces &= player.bitboards.squares_to_uncheck;
@@ -556,8 +556,7 @@ unsigned short Moves::getNextOrderedMove() {
 }
 
 AttacksInfo generateAttacksInfo(bool is_white, const BitBoards& bitboards, unsigned long long all_pieces,
-							    location player_king_location, location opponent_king_location,
-								const MagicBitboards& magic_bitboards) {
+							    location player_king_location, location opponent_king_location) {
 	unsigned long long attacks_bitboard = 0;
 	unsigned long long opponent_squares_to_uncheck = 0;
 	unsigned long long opponent_king = (opponent_king_location < 64) ? (1LL << opponent_king_location) : 0;
@@ -632,7 +631,7 @@ AttacksInfo generateAttacksInfo(bool is_white, const BitBoards& bitboards, unsig
 				opponent_squares_to_uncheck = 0;
 			}
 			else {
-				opponent_squares_to_uncheck = squaresToUncheckBishop(opponent_king_location, bishop_location, magic_bitboards);
+				opponent_squares_to_uncheck = squaresToUncheckBishop(opponent_king_location, bishop_location);
 			}
 		}
 
@@ -658,7 +657,7 @@ AttacksInfo generateAttacksInfo(bool is_white, const BitBoards& bitboards, unsig
 				opponent_squares_to_uncheck = 0;
 			}
 			else {
-				opponent_squares_to_uncheck = squaresToUncheckRook(opponent_king_location, rook_location, magic_bitboards);
+				opponent_squares_to_uncheck = squaresToUncheckRook(opponent_king_location, rook_location);
 			}
 		}
 
@@ -684,7 +683,7 @@ AttacksInfo generateAttacksInfo(bool is_white, const BitBoards& bitboards, unsig
 				opponent_squares_to_uncheck = 0;
 			}
 			else {
-				opponent_squares_to_uncheck = squaresToUncheckBishop(opponent_king_location, queen_location, magic_bitboards);
+				opponent_squares_to_uncheck = squaresToUncheckBishop(opponent_king_location, queen_location);
 			}
 		}
 
@@ -699,7 +698,7 @@ AttacksInfo generateAttacksInfo(bool is_white, const BitBoards& bitboards, unsig
 				opponent_squares_to_uncheck = 0;
 			}
 			else {
-				opponent_squares_to_uncheck = squaresToUncheckRook(opponent_king_location, queen_location, magic_bitboards);
+				opponent_squares_to_uncheck = squaresToUncheckRook(opponent_king_location, queen_location);
 			}
 		}
 
@@ -735,11 +734,11 @@ inline void addMovesFromAttacksBitboard(location start_square, bool is_in_check,
 	}
 }
 
-inline unsigned long long squaresToUncheckBishop(location opponent_king_location, location bishop_location, const MagicBitboards& magic_bitboards) {
+inline unsigned long long squaresToUncheckBishop(location opponent_king_location, location bishop_location) {
 	return magic_bitboards.bishop_squares_uncheck[bishop_location][opponent_king_location];
 }
 
-inline unsigned long long squaresToUncheckRook(location opponent_king_location, location rook_location, const MagicBitboards& magic_bitboards) {
+inline unsigned long long squaresToUncheckRook(location opponent_king_location, location rook_location) {
 	return magic_bitboards.rook_squares_uncheck[rook_location][opponent_king_location];
 }
 
@@ -755,7 +754,7 @@ inline int getPieceValue(const Player& player, location square) {
 	return 9000; // Queen
 }
 
-void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitboards) {
+void setPins(Player& player, Player& opponent) {
 	if (player.move_id == 0) { // Reset pins if moves id overflowed
 		for (Pin& pin : player.pins) {
 			pin.id_move_pinned = 0;
@@ -776,7 +775,7 @@ void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitbo
 		int squares_to_skip = std::countr_zero(cp_bishops_bitboard);
 		bishop_location += squares_to_skip;
 
-		setPin(player, opponent, bishop_location, true, magic_bitboards);
+		setPin(player, opponent, bishop_location, true);
 
 		cp_bishops_bitboard >>= (squares_to_skip + 1);
 		bishop_location++;
@@ -789,7 +788,7 @@ void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitbo
 		int squares_to_skip = std::countr_zero(cp_rooks_bitboard);
 		rook_location += squares_to_skip;
 
-		setPin(player, opponent, rook_location, false, magic_bitboards);
+		setPin(player, opponent, rook_location, false);
 
 		cp_rooks_bitboard >>= (squares_to_skip + 1);
 		rook_location++;
@@ -802,18 +801,18 @@ void setPins(Player& player, Player& opponent, const MagicBitboards& magic_bitbo
 		int squares_to_skip = std::countr_zero(cp_queens_bitboard);
 		queen_location += squares_to_skip;
 
-		setPin(player, opponent, queen_location, true, magic_bitboards);
-		setPin(player, opponent, queen_location, false, magic_bitboards);
+		setPin(player, opponent, queen_location, true);
+		setPin(player, opponent, queen_location, false);
 
 		cp_queens_bitboard >>= (squares_to_skip + 1);
 		queen_location++;
 	}
 }
 
-void setPin(Player& player, const Player& opponent, location piece_location, bool is_pin_diagonal, const MagicBitboards& magic_bitboards) {
+void setPin(Player& player, const Player& opponent, location piece_location, bool is_pin_diagonal) {
 	unsigned long long squares_to_uncheck;
-	if (is_pin_diagonal) squares_to_uncheck = squaresToUncheckBishop(player.locations.king, piece_location, magic_bitboards);
-	else squares_to_uncheck = squaresToUncheckRook(player.locations.king, piece_location, magic_bitboards);
+	if (is_pin_diagonal) squares_to_uncheck = squaresToUncheckBishop(player.locations.king, piece_location);
+	else squares_to_uncheck = squaresToUncheckRook(player.locations.king, piece_location);
 	if (!squares_to_uncheck) return;
 
 	unsigned long long friendly_pieces_covering_check = squares_to_uncheck & player.bitboards.friendly_pieces;

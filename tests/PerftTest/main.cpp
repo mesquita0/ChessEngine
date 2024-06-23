@@ -19,11 +19,10 @@ int main() {
 	std::chrono::milliseconds total_duration(0);
 	unsigned long long total_positions = 0;
 
-	MagicBitboards magic_bitboards;
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) return -1;
 
-	ZobristKeys zobrist_keys = ZobristKeys();
+	zobrist_keys = ZobristKeys();
 
 	// Perft test suit positions from http://www.rocechess.ch/perft.html
 	std::ifstream in_file;
@@ -46,7 +45,7 @@ int main() {
 		}
 		std::cout << "Fen: " << perft[0] << "\n";
 
-		auto [player, opponent, half_moves, full_moves] = FENToPosition(perft[0], magic_bitboards);
+		auto [player, opponent, half_moves, full_moves] = FENToPosition(perft[0]);
 		if (full_moves == -1) return -3;
 
 		for (int depth = start_depth; depth <= max_depth; depth++) {
@@ -54,7 +53,7 @@ int main() {
 			unsigned long long expected_num_nodes = std::stoull(perft[depth].substr(3));
 
 			auto start = std::chrono::high_resolution_clock::now();
-			unsigned long long num_nodes = Perft(depth, player, opponent, magic_bitboards, zobrist_keys);
+			unsigned long long num_nodes = Perft(depth, player, opponent);
 			auto stop = std::chrono::high_resolution_clock::now();
 
 			if (expected_num_nodes == num_nodes) {

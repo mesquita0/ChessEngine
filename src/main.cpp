@@ -105,7 +105,6 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Load Magic Bitboards
-	MagicBitboards magic_bitboards;
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) {
 		cout << "Couldn't load Magic Bitboards file.";
@@ -113,16 +112,15 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Set up initial position
-	auto [first_to_move, second_to_move, half_moves, full_moves] = FENToPosition(FEN, magic_bitboards);
+	auto [first_to_move, second_to_move, half_moves, full_moves] = FENToPosition(FEN);
 	if (full_moves == -1) {
 		cout << "Invalid Fen position.\n";
 		return 10;
 	}
 
 	// Generate Zobrist keys and allocate transposition table
-	ZobristKeys zobrist_keys;
 	unsigned long long hash = zobrist_keys.positionToHash(first_to_move, second_to_move);
-	TranspositionTable transposition_table(256, first_to_move.bitboards.all_pieces); // Size in mb, must be a power of two
+	tt = TranspositionTable(256, first_to_move.bitboards.all_pieces); // Size in mb, must be a power of two
 	
 	Player* player = &first_to_move;
 	Player* opponent = &second_to_move;
@@ -143,7 +141,7 @@ int main(int argc, char* argv[]) {
 
 	GameOutcome game_outcome = ongoing;
 	Moves moves;
-	moves.generateMoves(*player, *opponent, magic_bitboards);
+	moves.generateMoves(*player, *opponent);
 	HashPositions hash_positions(hash);
 
 	while (moves.num_moves != 0) {
@@ -210,9 +208,9 @@ int main(int argc, char* argv[]) {
 			// Search best move
 			SearchResult search_result;
 			if (fixed_depth)
-				search_result = FindBestMoveItrDeepening(fixed_depth, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys, transposition_table);
+				search_result = FindBestMoveItrDeepening(fixed_depth, *player, *opponent, hash_positions, half_moves);
 			else
-				search_result = FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, half_moves, magic_bitboards, zobrist_keys, transposition_table);
+				search_result = FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, half_moves);
 			
 			// Print best move
 			move = search_result.best_move;
@@ -246,10 +244,10 @@ int main(int argc, char* argv[]) {
 			is_engine_turn = false;
 		}
 
-		MoveInfo move_info = makeMove(move, *player, *opponent, hash, magic_bitboards, zobrist_keys);
+		MoveInfo move_info = makeMove(move, *player, *opponent, hash);
 
 		short move_flag = getMoveFlag(move);
-		transposition_table.updateMoveRoot(move_info.capture_flag, move_flag);
+		tt.updateMoveRoot(move_info.capture_flag, move_flag);
 		half_moves = hash_positions.updatePositions(move_info.capture_flag, move_flag, move_info.hash, half_moves);
 
 		if (!player->is_white) full_moves++;
@@ -261,7 +259,7 @@ int main(int argc, char* argv[]) {
 		Player* tmp = player;
 		player = opponent;
 		opponent = tmp;
-		moves.generateMoves(*player, *opponent, magic_bitboards);
+		moves.generateMoves(*player, *opponent);
 	}
 
 	cout << "Fen: " << PositionToFEN(*player, *opponent, half_moves, full_moves) << '\n';

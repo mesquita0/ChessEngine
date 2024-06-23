@@ -1,7 +1,5 @@
 #pragma once
 #include "Player.h"
-#include "MagicBitboards.h"
-#include "Zobrist.h"
 
 constexpr short no_capture = 0;
 constexpr short pawn_capture = 1;
@@ -18,6 +16,6 @@ struct MoveInfo {
 };
 
 // Returns move info to be used in unmakeMove.
-MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys);
+MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash);
 
-void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info, const MagicBitboards& magic_bitboards);
+void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info);

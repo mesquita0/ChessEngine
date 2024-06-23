@@ -14,12 +14,9 @@ struct SearchResult {
 };
 
 // Returns the move with the highest evaluation
-SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves,
-										const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt);
+SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves);
 
 // Returns the move with the highest evaluation
-SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves,
-									  const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt);
+SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves);
 
-SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves,
-							const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt);
+SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves);

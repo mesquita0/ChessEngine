@@ -17,7 +17,7 @@ constexpr std::array<unsigned long long, 8> files = { Afile, Bfile, Cfile, Dfile
 
 static int PawnStructure(const Player& player);
 
-int Evaluate(const Player& player, const Player& opponent, const MagicBitboards& magic_bitboards) {
+int Evaluate(const Player& player, const Player& opponent) {
 
 	// If Checkmate
 	if (player.bitboards.king & opponent.bitboards.attacks) {

@@ -1,6 +1,5 @@
 #pragma once
 #include "Player.h"
-#include "MagicBitboards.h"
 #include "Locations.h"
 #include <string>
 
@@ -10,7 +9,7 @@ struct Position {
 };
 
 std::string PositionToFEN(const Player& player, const Player& opponent, int half_moves, int full_moves);
-Position FENToPosition(const std::string& FEN, const MagicBitboards& magic_bitboards);
+Position FENToPosition(const std::string& FEN);
 std::string locationToNotationSquare(int square);
 location notationSquareToLocation(const std::string& square);
 void printBoard(const Player& player, const Player& opponent);

@@ -1,5 +1,4 @@
 #pragma once
-#include "Moves.h"
 #include <array>
 #include <vector>
 
@@ -25,3 +24,5 @@ private:
 	std::vector<unsigned long long> sliding_attacks_array;
 
 };
+
+inline MagicBitboards magic_bitboards; // Global Magic Bitboards

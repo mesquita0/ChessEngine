@@ -23,7 +23,6 @@ void time_engine(Position& initial_pos, const MagicBitboards& magic_bitboards, c
 int main() {
 
 	// Load Magic Bitboards
-	MagicBitboards magic_bitboards;
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) {
 		cout << "Couldn't load Magic Bitboards file.";
@@ -32,14 +31,13 @@ int main() {
 
 	// Set up initial position
 	std::string FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	Position initial_pos = FENToPosition(FEN, magic_bitboards);
+	Position initial_pos = FENToPosition(FEN);
 	if (initial_pos.full_moves == -1) {
 		cout << "Invalid Fen position.\n";
 		return 1;
 	}
 
-	ZobristKeys zobrist_keys = ZobristKeys();
-
+	zobrist_keys = ZobristKeys();
 
 	time_engine(initial_pos, magic_bitboards, zobrist_keys);
 
@@ -52,10 +50,10 @@ void time_engine(Position& initial_pos, const MagicBitboards& magic_bitboards, c
 
 	unsigned long long hash = zobrist_keys.positionToHash(initial_pos.player, initial_pos.opponent);
 	HashPositions positions(hash);
-	TranspositionTable transposition_table(size_TT, initial_pos.player.bitboards.all_pieces);
+	tt = TranspositionTable(size_TT, initial_pos.player.bitboards.all_pieces);
 
 	auto start = std::chrono::high_resolution_clock::now();
-	FindBestMoveItrDeepening(search_depth, initial_pos.player, initial_pos.opponent, positions, initial_pos.half_moves, magic_bitboards, zobrist_keys, transposition_table);
+	FindBestMoveItrDeepening(search_depth, initial_pos.player, initial_pos.opponent, positions, initial_pos.half_moves);
 	auto stop = std::chrono::high_resolution_clock::now();
 	auto duration = duration_cast<std::chrono::milliseconds>(stop - start);
 

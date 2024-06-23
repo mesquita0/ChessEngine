@@ -40,13 +40,14 @@ public:
 
 class TranspositionTable {
 	std::vector<Bucket> table;
-	uint64_t index_mask;
-	uint8_t num_pieces_root;
+	uint64_t index_mask = 0;
+	uint8_t num_pieces_root = 0;
 	uint8_t current_generation = 0;
 
 public:
 	// Size in mb, must be a power of two.
 	TranspositionTable(size_t size_mb, uint64_t all_pieces);
+	TranspositionTable() = default;
 
 	// pos_entry should be the pointer returned in get, or nullptr if get wasn't used.
 	void store(uint64_t hash, unsigned short best_move, uint8_t depth, nodeFlag node_flag, int16_t eval, uint8_t num_pieces, Entry* pos_entry);
@@ -55,3 +56,5 @@ public:
 
 	void updateMoveRoot(short capture_flag, short move_flag);
 };
+
+inline TranspositionTable tt; // Global Transposition Table

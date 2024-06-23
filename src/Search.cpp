@@ -17,9 +17,8 @@
 #include <vector>
 
 int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
-		   int half_moves, int num_pieces, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, 
-		   std::vector<std::array<unsigned short, 2>>& killer_moves, TranspositionTable& tt);
-int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys);
+		   int half_moves, int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves);
+int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent);
 
 std::atomic_bool timed_out = false;
 int search_id = 0; // Only written by main thread, does not need to be atomic
@@ -28,8 +27,7 @@ static void stopSearch(int id) {
 	if (id == search_id) timed_out = true;
 }
 
-SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves,
-									  const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt) {
+SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
 	SearchResult result = { 0, 0, 0 };
 
 	// Set timer to search
@@ -42,7 +40,7 @@ SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& pl
 	
 	int depth = 1;
 	while (result.evaluation != checkmated_eval && result.evaluation != checkmate_eval && !timed_out) {
-		SearchResult r = FindBestMove(depth, player, opponent, positions, half_moves, magic_bitboards, zobrist_keys, tt);
+		SearchResult r = FindBestMove(depth, player, opponent, positions, half_moves);
 		depth++;
 		
 		// Ignore result if search was canceled imediately, without being able to look at any moves
@@ -55,23 +53,21 @@ SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& pl
 }
 
 
-SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves,
-									  const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt) {
+SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
 	SearchResult result = { 0, 0, 0 };
 	timed_out = false;
 
 	for (int i = 1; i <= depth; i++) {
-		result = FindBestMove(i, player, opponent, positions, half_moves, magic_bitboards, zobrist_keys, tt);
+		result = FindBestMove(i, player, opponent, positions, half_moves);
 		
 		if (result.evaluation == checkmated_eval || result.evaluation == checkmate_eval) break;
 	}
-
+	
 	return result;
 }
 
 
-SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves,
-						  const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, TranspositionTable& tt) {
+SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
 
 	 int num_pieces = std::popcount(player.bitboards.all_pieces);
 
@@ -91,7 +87,7 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 	std::vector<std::array<unsigned short, 2>> killer_moves(depth);
 
 	Moves moves;
-	moves.generateMoves(player, opponent, magic_bitboards);
+	moves.generateMoves(player, opponent);
 
 	int branch_id = positions.branch_id;
 	int start = positions.start;
@@ -124,13 +120,13 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 
 		unsigned short move_flag = getMoveFlag(move);
 
-		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash, magic_bitboards, zobrist_keys);
+		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash);
 		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
 		int new_num_pieces = num_pieces - ((mv_inf.capture_flag != no_capture || move_flag == en_passant) ? 1 : 0);
 		
-		int eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
+		int eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves);
 		
-		unmakeMove(move, player, opponent, mv_inf, magic_bitboards);
+		unmakeMove(move, player, opponent, mv_inf);
 		positions.clear();
 		positions.start = start;
 
@@ -158,8 +154,7 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 
 
 int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
-		   int half_moves, int num_pieces, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys, 
-		   std::vector<std::array<unsigned short, 2>>& killer_moves, TranspositionTable& tt) {
+		   int half_moves, int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves) {
 
 	// Cancel search if timed out
 	if (timed_out) return INT_MAX;
@@ -170,11 +165,11 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 
 	// Search only captures when desired depth is reached
 	if (depth == 0) {
-		return quiescenceSearch(alpha, beta, player, opponent, magic_bitboards, zobrist_keys);
+		return quiescenceSearch(alpha, beta, player, opponent);
 	}
 
 	Moves moves;
-	moves.generateMoves(player, opponent, magic_bitboards);
+	moves.generateMoves(player, opponent);
 
 	// Check Checkamte or Stalemate
 	if (moves.num_moves == 0) {
@@ -224,29 +219,29 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 
 		unsigned short move_flag = getMoveFlag(move);
 
-		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash, magic_bitboards, zobrist_keys);
+		MoveInfo mv_inf = makeMove(move, player, opponent, current_hash);
 		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
 		int new_num_pieces = num_pieces - ((mv_inf.capture_flag == no_capture || move_flag == en_passant) ? 0 : 1);
 
 		// PV Search
 		int eval;
 		if (pv_search)
-			eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
+			eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves);
 		else {
-			eval = -Search(depth - 1, -alpha-1, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
+			eval = -Search(depth - 1, -(alpha + 1), -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves);
 			
 			if (eval > alpha && eval < beta) { // re-search
 				AttacksInfo player_attacks = generateAttacksInfo(player.is_white, player.bitboards, player.bitboards.all_pieces,
-																 player.locations.king, opponent.locations.king, magic_bitboards);
+																 player.locations.king, opponent.locations.king);
 
 				player.bitboards.attacks = player_attacks.attacks_bitboard;
 				opponent.bitboards.squares_to_uncheck = player_attacks.opponent_squares_to_uncheck;
 
-				eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
+				eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves);
 			}
 		}
 
-		unmakeMove(move, player, opponent, mv_inf, magic_bitboards);
+		unmakeMove(move, player, opponent, mv_inf);
 		positions.clear();
 		positions.start = start;
 
@@ -292,15 +287,15 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 }
 
 
-int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, const MagicBitboards& magic_bitboards, const ZobristKeys& zobrist_keys) {
+int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent) {
 	Moves moves;
 
 	// Generates captures and updates player attacks bitboard, does not include king attacks to squares 
 	// that are defedend or attacks of pinned pieces that would leave the king in check if played
-	moves.generateCaptures(player, opponent, magic_bitboards);
+	moves.generateCaptures(player, opponent);
 
 	// Low bound on evaluation, since almost always making a move is better than doing nothing
-	int standing_eval = Evaluate(player, opponent, magic_bitboards); 
+	int standing_eval = Evaluate(player, opponent); 
 	if (standing_eval >= beta) return beta;
 	if (standing_eval > alpha ) alpha = standing_eval;
 
@@ -308,9 +303,9 @@ int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, cons
 	unsigned short move;
 
 	while (move = moves.getNextOrderedMove()) {
-		MoveInfo mv_inf = makeMove(move, player, opponent, 0, magic_bitboards, zobrist_keys);
-		int eval = -quiescenceSearch(-beta, -alpha, opponent, player, magic_bitboards, zobrist_keys);
-		unmakeMove(move, player, opponent, mv_inf, magic_bitboards);
+		MoveInfo mv_inf = makeMove(move, player, opponent, 0);
+		int eval = -quiescenceSearch(-beta, -alpha, opponent, player);
+		unmakeMove(move, player, opponent, mv_inf);
 
 		if (eval >= beta) return beta;
 		if (eval > alpha) alpha = eval;

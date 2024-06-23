@@ -87,7 +87,7 @@ string PositionToFEN(const Player& player, const Player& opponent, int half_move
 	return result;
 }
 
-Position FENToPosition(const string& FEN, const MagicBitboards& magic_bitboards) {
+Position FENToPosition(const string& FEN) {
 	Player white = Player(true);
 	Player black = Player(false);
 	const Position invalid_fen = { white, black, -1, -1 };
@@ -182,17 +182,17 @@ Position FENToPosition(const string& FEN, const MagicBitboards& magic_bitboards)
 	black.bitboards.all_pieces = white.bitboards.friendly_pieces | black.bitboards.friendly_pieces;
 
 	AttacksInfo white_attack = generateAttacksInfo(true, white.bitboards, white.bitboards.all_pieces,
-												   white.locations.king, black.locations.king, magic_bitboards);
+												   white.locations.king, black.locations.king);
 	AttacksInfo black_attack = generateAttacksInfo(false, black.bitboards, black.bitboards.all_pieces,
-												   black.locations.king, white.locations.king, magic_bitboards);
+												   black.locations.king, white.locations.king);
 
 	white.bitboards.attacks = white_attack.attacks_bitboard;
 	white.bitboards.squares_to_uncheck = black_attack.opponent_squares_to_uncheck;
 	black.bitboards.attacks = black_attack.attacks_bitboard;
 	black.bitboards.squares_to_uncheck = white_attack.opponent_squares_to_uncheck;
 
-	setPins(white, black, magic_bitboards);
-	setPins(black, white, magic_bitboards);
+	setPins(white, black);
+	setPins(black, white);
 
 	// Set turn
 	bool is_white_to_move;
