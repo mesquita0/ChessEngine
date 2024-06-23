@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <chrono>
 #include <iostream>
+#include <limits>
 #include <string>
 
 constexpr int default_time = 5000;
@@ -23,14 +24,23 @@ int main(int argc, char* argv[]) {
 	bool quiet_mode = false;
 	int fixed_depth = 0;
 	std::chrono::milliseconds search_time(default_time);
+	std::string FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 	
-	// TODO: -h  --fen
 	// Flags 
 	for (int i = 1; i < argc; i++) {
-		if (!strcmp("-q", argv[i])) {
+		if (!strcmp("-h", argv[i])) {
+			cout << "Optional arguments:\n";
+			cout.width(30); cout << std::left << "-h, --help"; cout << "Show this help message and exits.\n";
+			cout.width(30); cout << std::left << "-d DEPTH, --depth DEPTH"; cout << "Sets fixed depth for each move search.\n";
+			cout.width(30); cout << std::left << "-q, --quiet"; cout << "Activates quiet mode, won't print board after each move.\n";
+			cout.width(30); cout << std::left << "-t TIME, --time TIME"; cout << "Sets fixed time (in ms) for each move search, should be at least 30ms.\n";
+			cout.width(30); cout << std::left << "--fen FEN"; cout << "Sets the starting position for the game.\n";
+			return 0;
+		}
+		else if (!strcmp("-q", argv[i]) || !strcmp("--quiet", argv[i])) {
 			quiet_mode = true;
 		}
-		else if (!strcmp("-t", argv[i])) {
+		else if (!strcmp("-t", argv[i]) || !strcmp("--time", argv[i])) {
 			if (++i < argc) {
 				int time_ms;
 
@@ -47,7 +57,7 @@ int main(int argc, char* argv[]) {
 				return 2;
 			}
 		}
-		else if (!strcmp("-d", argv[i])) {
+		else if (!strcmp("-d", argv[i]) || !strcmp("--depth", argv[i])) {
 			if (++i < argc) {
 				try { fixed_depth = std::stoi(argv[i]); }
 				catch (std::exception const& e) {
@@ -64,6 +74,19 @@ int main(int argc, char* argv[]) {
 				cout << "No depth was provided with the depth flag.\n";
 				return 5;
 			}
+		}
+		else if (!strcmp("--fen", argv[i])) {
+			if (i + 6 >= argc) {
+				cout << "Invalid Fen position.\n";
+				return 10;
+			}
+
+			FEN = "";
+			for (int j = 1; j < 7; j++) {
+				FEN.append(argv[i + j]);
+				if (j != 6) FEN.append(" ");
+			}
+			i += 6;
 		}
 		else {
 			cout << "Unknown parameter: " << argv[i] << '\n';
@@ -90,7 +113,6 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Set up initial position
-	std::string FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 	auto [first_to_move, second_to_move, half_moves, full_moves] = FENToPosition(FEN, magic_bitboards);
 	if (full_moves == -1) {
 		cout << "Invalid Fen position.\n";
@@ -106,11 +128,18 @@ int main(int argc, char* argv[]) {
 	Player* opponent = &second_to_move;
 
 	// Get user's pieces color
-	bool is_engine_turn, is_engine_white;
-	cout << "Enter 0 to play as white and 1 to play as black: ";
-	std::cin >> is_engine_white;
-	if ((!is_engine_white && !player->is_white) || (is_engine_white && player->is_white)) is_engine_turn = true;
-	else is_engine_turn = false;
+	bool is_engine_turn = false;
+	char p = 0;
+	while (p != 'b' && p != 'w') {
+		cout << "Enter w to play as white and b to play as black: ";
+		std::cin >> p;
+		if (std::cin.eof()) return 0;
+
+		p = std::tolower(p);
+		bool is_engine_white = (p == 'b');
+		if ((!is_engine_white && !player->is_white) || (is_engine_white && player->is_white)) is_engine_turn = true;
+		std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+	}
 
 	GameOutcome game_outcome = ongoing;
 	Moves moves;
@@ -130,6 +159,7 @@ int main(int argc, char* argv[]) {
 			while (true) {
 				std::string move_str;
 				std::cin >> move_str;
+				if (std::cin.eof()) return 0;
 				std::transform(move_str.begin(), move_str.end(), move_str.begin(), (int (*)(int))std::tolower);
 
 				// Moves that are not promotions

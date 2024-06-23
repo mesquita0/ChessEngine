@@ -196,18 +196,18 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 			return position_tt->eval;
 
 		case UpperBound:
+			if (alpha >= position_tt->eval) return position_tt->eval;
 			if (beta > position_tt->eval) beta = position_tt->eval;
 			break;
 
 		case LowerBound:
+			if (position_tt->eval >= beta) return position_tt->eval;
 			if (alpha < position_tt->eval) {
 				alpha = position_tt->eval;
 				best_move = position_tt->best_move;
 			}
 			break;
 		}
-
-		if (alpha >= beta) return beta;
 	}
 
 	int branch_id = positions.branch_id;
@@ -216,7 +216,8 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 
 	moves.orderMoves(player, opponent, position_tt, &killer_moves[depth]);
 	unsigned short move;
-	bool did_fail_low = true;
+	int best_eval = INT_MIN + 1;
+	bool pv_search = true;
 
 	while (move = moves.getNextOrderedMove()) {
 		if (timed_out) break;
@@ -227,7 +228,23 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 		int new_half_moves = positions.updatePositions(mv_inf.capture_flag, move_flag, mv_inf.hash, half_moves);
 		int new_num_pieces = num_pieces - ((mv_inf.capture_flag == no_capture || move_flag == en_passant) ? 0 : 1);
 
-		int eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
+		// PV Search
+		int eval;
+		if (pv_search)
+			eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
+		else {
+			eval = -Search(depth - 1, -alpha-1, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
+			
+			if (eval > alpha && eval < beta) { // re-search
+				AttacksInfo player_attacks = generateAttacksInfo(player.is_white, player.bitboards, player.bitboards.all_pieces,
+																 player.locations.king, opponent.locations.king, magic_bitboards);
+
+				player.bitboards.attacks = player_attacks.attacks_bitboard;
+				opponent.bitboards.squares_to_uncheck = player_attacks.opponent_squares_to_uncheck;
+
+				eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, magic_bitboards, zobrist_keys, killer_moves, tt);
+			}
+		}
 
 		unmakeMove(move, player, opponent, mv_inf, magic_bitboards);
 		positions.clear();
@@ -235,8 +252,8 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 
 		// Fail high
 		if (eval >= beta) {
-			positions.unbranch(branch_id, start);
-			tt.store( current_hash, move, depth, LowerBound, eval, num_pieces, position_tt);
+			best_eval = eval;
+			best_move = move;
 
 			// Killer moves
 			if (!isCapture(move, opponent.bitboards.friendly_pieces) && killer_moves[depth][0] != move) {
@@ -244,35 +261,34 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 				killer_moves[depth][0] = move;
 			}
 			
-			return beta;
+			break;
 		}
 
-		if (eval > alpha) {
-			alpha = eval;
+		if (eval > best_eval) {
+			best_eval = eval;
 			best_move = move;
-			did_fail_low = false;
+			if (eval > alpha) alpha = eval;
 		}
+
+		// Search only the first move with an open window
+		if (depth > 4) pv_search = false;
 	}
 
 	positions.unbranch(branch_id, start);
 
 	// Ignore result of the search if couldnt complete search and failed low, since we cant draw any conclusions from that
-	if (did_fail_low && timed_out) {
+	if (best_eval <= alpha && timed_out) {
 		return INT_MAX;
 	}
 
-	// Store in TT
-	if (did_fail_low) {
-		tt.store(current_hash, 0, depth, UpperBound, alpha, num_pieces, position_tt);
-	}
-	else if (timed_out) {
-		tt.store(current_hash, best_move, depth, LowerBound, alpha, num_pieces, position_tt);
-	}
-	else {
-		tt.store(current_hash, best_move, depth, Exact, alpha, num_pieces, position_tt);
-	}
+	nodeFlag nf;
+	if (best_eval <= alpha) nf = UpperBound; // Fail Low
+	else if (timed_out || best_eval >= beta) nf = LowerBound; // Timed out or Fail High
+	else nf = Exact;
+
+	tt.store(current_hash, best_move, depth, nf, best_eval, num_pieces, position_tt);
 	
-	return alpha;
+	return best_eval;
 }
 
 
