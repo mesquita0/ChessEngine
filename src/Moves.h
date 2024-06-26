@@ -6,6 +6,7 @@
 
 struct Entry;
 
+constexpr unsigned short NULL_MOVE = 0;
 constexpr int max_num_moves = 218;
 constexpr unsigned short castle_king_side = 0b0001 << 12;
 constexpr unsigned short castle_queen_side = 0b0010 << 12;

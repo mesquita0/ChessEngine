@@ -322,6 +322,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		}
 
 		break;
+
+	default: // Null Move
+		break;
 	}
 
 	// Captures
@@ -523,7 +526,7 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		player.num_queens--;
 		break;
 
-	default:
+	default: // Null Move
 		break;
 	}
 

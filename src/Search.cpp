@@ -16,9 +16,12 @@
 #include <thread>
 #include <vector>
 
-int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
-		   int half_moves, int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves);
+int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, int half_moves,
+	int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves, bool reduced = false, bool used_null_move = false);
 int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent);
+bool nullMove(Player& player, Player& opponent);
+bool reduceMove(int mv_pos, unsigned short mv, int depth, const MoveInfo& mv_info, const Player& player, 
+				const Player& opponent, bool player_in_check, const std::array<unsigned short, 2>& killer_moves_at_ply);
 
 std::atomic_bool timed_out = false;
 int search_id = 0; // Only written by main thread, does not need to be atomic
@@ -153,8 +156,8 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 }
 
 
-int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
-		   int half_moves, int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves) {
+int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, int half_moves, 
+		   int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves, bool reduced, bool used_null_move) {
 
 	// Cancel search if timed out
 	if (timed_out) return INT_MAX;
@@ -205,6 +208,16 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 		}
 	}
 
+	// Null-Move Pruning
+	if (!used_null_move && nullMove(player, opponent) && depth >= 3) {
+
+		MoveInfo mv_inf = makeMove(NULL_MOVE, player, opponent, current_hash);
+		int eval = -Search(depth - 3, -beta, -beta + 1, opponent, player, positions, half_moves, num_pieces, killer_moves, reduced, true); // R = 2
+		unmakeMove(NULL_MOVE, player, opponent, mv_inf);
+
+		if (eval >= beta) return eval;
+	}
+
 	int branch_id = positions.branch_id;
 	int start = positions.start;
 	positions.branch();
@@ -212,7 +225,9 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 	moves.orderMoves(player, opponent, position_tt, &killer_moves[depth]);
 	unsigned short move;
 	int best_eval = INT_MIN + 1;
+	int mv_pos = 0;
 	bool pv_search = true;
+	bool player_in_check = (player.bitboards.king & opponent.bitboards.attacks);
 
 	while (move = moves.getNextOrderedMove()) {
 		if (timed_out) break;
@@ -226,9 +241,23 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 		// PV Search
 		int eval;
 		if (pv_search)
-			eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves);
+			eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves, reduced);
 		else {
-			eval = -Search(depth - 1, -(alpha + 1), -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves);
+			int d = depth - 1;
+			bool reduce_search = false;
+			if (!reduced && reduceMove(mv_pos, move, d, mv_inf, player, opponent, player_in_check, killer_moves[depth])) {
+				reduce_search = true;
+				/*
+					First 2 moves: do not reduce
+					3rd and 4th move: reduce by 1
+					5th to 7th: reduce by 2
+					Rest of the moves: reduce by 1/3
+				*/
+				if (mv_pos <= 3) d -= 1;
+				else if (mv_pos <= 6) d -= 2;
+				else d /= 3;
+			}
+			eval = -Search(d, -alpha - 1, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves, reduce_search);
 			
 			if (eval > alpha && eval < beta) { // re-search
 				AttacksInfo player_attacks = generateAttacksInfo(player.is_white, player.bitboards, player.bitboards.all_pieces,
@@ -237,7 +266,7 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 				player.bitboards.attacks = player_attacks.attacks_bitboard;
 				opponent.bitboards.squares_to_uncheck = player_attacks.opponent_squares_to_uncheck;
 
-				eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves);
+				eval = -Search(depth - 1, -beta, -alpha, opponent, player, positions, new_half_moves, new_num_pieces, killer_moves, reduced);
 			}
 		}
 
@@ -264,6 +293,8 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 			best_move = move;
 			if (eval > alpha) alpha = eval;
 		}
+
+		mv_pos++;
 
 		// Search only the first move with an open window
 		if (depth > 4) pv_search = false;
@@ -312,4 +343,41 @@ int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent) {
 	}
 
 	return alpha;
+}
+
+
+bool nullMove(Player& player, Player& opponent) {
+	/*
+		Do not null move if:
+			- Player has only kings and pawns left
+			- Player has < 4 pieces
+			- Player is in check
+	*/
+	int num_pieces_player = std::popcount(player.bitboards.friendly_pieces);
+	if ((player.bitboards.pawns | player.bitboards.king) == player.bitboards.friendly_pieces || 
+		num_pieces_player < 4 || (player.bitboards.king & opponent.bitboards.attacks)) return false;
+	
+	return true;
+}
+
+
+bool reduceMove(int mv_pos, unsigned short mv, int depth, const MoveInfo& mv_info, const Player& player, 
+				const Player& opponent, bool player_in_check, const std::array<unsigned short, 2>& killer_moves_at_ply) {
+	/*
+		Do not reduce for:
+			- Killer moves
+			- Moves while in check
+			- Moves that give check
+			- Captures or promotions
+			- Depth < 3
+			- First 2 moves
+	*/
+
+	for (unsigned short killer_move : killer_moves_at_ply) if (killer_move == mv) return false;
+
+	if (player_in_check || (player.bitboards.attacks & opponent.bitboards.king) || 
+		mv_info.capture_flag != no_capture || isPromotion(mv) || depth < 3 || mv_pos < 2) 
+		return false;
+
+	return true;
 }
