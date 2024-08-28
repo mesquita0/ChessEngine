@@ -18,7 +18,7 @@
 
 int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, int half_moves,
 	int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves, bool reduced = false, bool used_null_move = false);
-int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent);
+int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, int num_pieces);
 bool nullMove(Player& player, Player& opponent);
 bool reduceMove(int mv_pos, unsigned short mv, int depth, const MoveInfo& mv_info, const Player& player, 
 				const Player& opponent, bool player_in_check, const std::array<unsigned short, 2>& killer_moves_at_ply);
@@ -141,7 +141,8 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 
 	positions.unbranch(branch_id, start);
 	nodeFlag nf = timed_out ? LowerBound : Exact;
-	tt.store(current_hash, best_move, depth, nf, alpha, num_pieces, position_tt);
+	if (alpha > INT_MIN + 1)
+		tt.store(current_hash, best_move, depth, nf, alpha, num_pieces, position_tt);
 
 	// Restore attacks and squares to uncheck bitboards
 	opponent.bitboards.attacks = attacks;
@@ -168,7 +169,7 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 
 	// Search only captures when desired depth is reached
 	if (depth == 0) {
-		return quiescenceSearch(alpha, beta, player, opponent);
+		return quiescenceSearch(alpha, beta, player, opponent, num_pieces);
 	}
 
 	Moves moves;
@@ -312,22 +313,24 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 	else if (timed_out || best_eval >= beta) nf = LowerBound; // Timed out or Fail High
 	else nf = Exact;
 
-	tt.store(current_hash, best_move, depth, nf, best_eval, num_pieces, position_tt);
+	if (best_eval > alpha || !timed_out) // Don't store score if failed low and timed out
+		tt.store(current_hash, best_move, depth, nf, best_eval, num_pieces, position_tt);
 	
 	return best_eval;
 }
 
 
-int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent) {
+int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, int num_pieces) {
 	Moves moves;
 
-	// Generates captures and updates player attacks bitboard, does not include king attacks to squares 
-	// that are defedend or attacks of pinned pieces that would leave the king in check if played
+	// Generates captures and updates player attacks bitboard (needed in Evaluate), does not
+	// include king attacks to squares that are defedend or attacks of pinned pieces that 
+	// would leave the king in check if played.
 	moves.generateCaptures(player, opponent);
 
 	// Low bound on evaluation, since almost always making a move is better than doing nothing
-	int standing_eval = Evaluate(player, opponent); 
-	if (standing_eval >= beta) return beta;
+	int standing_eval = Evaluate(player, opponent, num_pieces); 
+	if (standing_eval >= beta) return standing_eval;
 	if (standing_eval > alpha ) alpha = standing_eval;
 
 	moves.orderMoves(player, opponent, nullptr, nullptr);
@@ -335,10 +338,10 @@ int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent) {
 
 	while (move = moves.getNextOrderedMove()) {
 		MoveInfo mv_inf = makeMove(move, player, opponent, 0);
-		int eval = -quiescenceSearch(-beta, -alpha, opponent, player);
+		int eval = -quiescenceSearch(-beta, -alpha, opponent, player, num_pieces - 1);
 		unmakeMove(move, player, opponent, mv_inf);
 
-		if (eval >= beta) return beta;
+		if (eval >= beta) return eval;
 		if (eval > alpha) alpha = eval;
 	}
 

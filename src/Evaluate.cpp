@@ -1,5 +1,6 @@
 #include "Evaluate.h"
 #include "MagicBitboards.h"
+#include "PieceSquareTables.h"
 #include "Player.h"
 #include <array>
 #include <bit>
@@ -15,9 +16,18 @@ constexpr unsigned long long Gfile = 0x0202020202020202;
 constexpr unsigned long long Hfile = 0x0101010101010101;
 constexpr std::array<unsigned long long, 8> files = { Afile, Bfile, Cfile, Dfile, Efile, Gfile, Hfile };
 
-static int PawnStructure(const Player& player);
+constexpr int value_pawn = 100;
+constexpr int value_knight = 320;
+constexpr int value_bishop = 330;
+constexpr int value_rook = 500;
+constexpr int value_queen = 900;
 
-int Evaluate(const Player& player, const Player& opponent) {
+static int PawnStructure(const Player& player);
+static int MaterialScore(const Player& player);
+static int PositionalScore(const Player& player, int num_major_pieces);
+static int PieceScore(unsigned long long bitboard, int* piece_square_table, bool is_white);
+
+int Evaluate(const Player& player, const Player& opponent, int num_pieces) {
 
 	// If Checkmate
 	if (player.bitboards.king & opponent.bitboards.attacks) {
@@ -33,23 +43,37 @@ int Evaluate(const Player& player, const Player& opponent) {
 		}
 	}
 
-	double score_player = player.num_pawns + 30 * (player.num_knights + player.num_bishops) + player.num_rooks * 50 + player.num_queens * 90;
-	double score_opponent = opponent.num_pawns + 30 * (opponent.num_knights + opponent.num_bishops) + opponent.num_rooks * 50 + opponent.num_queens * 90;
+	int score_player = MaterialScore(player);
+	int score_opponent = MaterialScore(opponent);
 
 	score_player += PawnStructure(player);
 	score_opponent += PawnStructure(opponent);
 
-	score_player += std::popcount(player.bitboards.attacks);
-	score_opponent += std::popcount(opponent.bitboards.attacks);
+	score_player += (value_pawn / 10) * std::popcount(player.bitboards.attacks);
+	score_opponent += (value_pawn / 10) * std::popcount(opponent.bitboards.attacks);
+
+	int num_major_pieces = num_pieces - opponent.num_pawns - player.num_pawns - 2;
+	score_player += PositionalScore(player, num_major_pieces);
+	score_opponent += PositionalScore(opponent, num_major_pieces);
 
 	// Castle
-	if (player.can_castle_king_side) score_player += 2;
-	if (player.can_castle_queen_side) score_player += 2;
-	if (opponent.can_castle_king_side) score_opponent += 2;
-	if (opponent.can_castle_queen_side) score_opponent += 2;
+	if (player.can_castle_king_side) score_player += value_pawn / 4;
+	if (player.can_castle_queen_side) score_player += value_pawn / 5;
+	if (opponent.can_castle_king_side) score_opponent += value_pawn / 4;
+	if (opponent.can_castle_queen_side) score_opponent += value_pawn / 5;
 
 	return score_player - score_opponent;
 }
+
+
+static int MaterialScore(const Player& player) {
+	return value_pawn * player.num_pawns +
+		value_knight * player.num_knights +
+		value_bishop * player.num_bishops +
+		value_rook * player.num_rooks +
+		value_queen * player.num_queens;
+}
+
 
 static int PawnStructure(const Player& player) {
 	int score = 0;
@@ -60,7 +84,7 @@ static int PawnStructure(const Player& player) {
 
 		// Bit hack to see if there's more than one pawn in the same file (doubled pawns)
 		if ((pawns_file & (pawns_file - 1)) != 0) {
-			score -= 5;
+			score -= value_pawn / 2;
 		}
 
 		unsigned long long pawns_adjacent_file;
@@ -70,8 +94,44 @@ static int PawnStructure(const Player& player) {
 
 		// Isolated pawn
 		if (!pawns_adjacent_file) {
-			score -= 5;
+			score -= value_pawn / 2;
 		}
+	}
+
+	return score;
+}
+
+
+static int PositionalScore(const Player& player, int num_major_pieces) {
+	int score = 0;
+
+	score += PieceScore(player.bitboards.pawns, pawn, player.is_white);
+	score += PieceScore(player.bitboards.knights, knight, player.is_white);
+	score += PieceScore(player.bitboards.bishops, bishop, player.is_white);
+	score += PieceScore(player.bitboards.rooks, rook, player.is_white);
+	score += PieceScore(player.bitboards.queens, queen, player.is_white);
+
+	location loc_king = (player.is_white) ? 63 - player.locations.king : player.locations.king;
+	if (num_major_pieces > 3) score += king_middle_game[loc_king];
+	else score += king_end_game[loc_king];
+
+	return score;
+}
+
+
+static int PieceScore(unsigned long long bitboard, int* piece_square_table, bool is_white) {
+	int score = 0;
+	
+	location piece_location = 0;
+	while (bitboard != 0 && piece_location <= 63) {
+		int squares_to_skip = std::countr_zero(bitboard);
+		piece_location += squares_to_skip;
+
+		location loc = (is_white) ? 63 - piece_location : piece_location;
+		score += piece_square_table[loc];
+
+		bitboard >>= (squares_to_skip + 1);
+		piece_location++;
 	}
 
 	return score;

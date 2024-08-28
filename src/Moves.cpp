@@ -50,11 +50,11 @@ void Moves::generateMoves(const Player& player, const Player& opponent) {
 	// Pawns moves
 	short move_one_square = player.is_white ? 8 : -8;
 	short move_two_squares = player.is_white ? 16 : -16;
-	short location_unmoved_a_pawn = player.is_white ? 8 : 48;
 	short capture_right = player.is_white ? 9 : -9;
 	short capture_left = player.is_white ? 7 : -7;
 	short right_edge = player.is_white ? 7 : 0;
 	short left_edge = player.is_white ? 0 : 7;
+	short location_unmoved_a_pawn = player.is_white ? 8 : 48;
 
 	unsigned long long cp_pawns_bitboard = player.bitboards.pawns;
 	location pawn_location = 0;
@@ -487,10 +487,10 @@ void Moves::orderMoves(const Player& player, const Player& opponent, const Entry
 			piece_value = 1000;
 			break;
 		case bishop_move:
-			piece_value = 3000;
+			piece_value = 3300;
 			break;
 		case knight_move:
-			piece_value = 3000;
+			piece_value = 3200;
 			break;
 		case rook_move:
 			piece_value = 5000;
@@ -505,12 +505,12 @@ void Moves::orderMoves(const Player& player, const Player& opponent, const Entry
 			piece_value = 1000;
 			break;
 		case promotion_knight:
-			piece_value = 3000;
-			scores[i] += 2000;
+			piece_value = 3200;
+			scores[i] += 2200;
 			break;
 		case promotion_bishop:
-			piece_value = 3000;
-			scores[i] += 2000;
+			piece_value = 3300;
+			scores[i] += 2300;
 			break;
 		case promotion_rook:
 			piece_value = 5000;

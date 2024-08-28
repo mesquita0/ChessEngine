@@ -27,4 +27,3 @@ struct HashPositions {
 };
 
 GameOutcome getGameOutcome(const Player& player, const Player& opponent, const HashPositions& positions, int half_moves);
-	

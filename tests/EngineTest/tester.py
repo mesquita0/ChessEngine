@@ -3,18 +3,17 @@ import chess
 import chess.pgn
 import platform
 import random
-from subprocess import Popen, PIPE
 
 async def main():
     win_eng1 = 0
     win_eng2 = 0
     draws = 0
     canceled = 0
-    engine1_v = ".\Versions\V2"
-    engine2_v = ".\Versions\V3"
+    engine1_v = ".\Versions\V6"
+    engine2_v = ".\Versions\V6"
     engine1_time = 100
     engine2_time = 100
-    N = 1000
+    N = 500
     NUM_RANDOM_MOVES_EACH = 2
     initial_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     print_moves = False
@@ -43,9 +42,13 @@ async def main():
                 print(board.fen())
 
         # Initialize engines
-        engine1 = Popen([engine1_v, '-q', '-t', str(engine1_time), '--fen', *board.fen().split()], stdin=PIPE, stdout=PIPE)
-        engine2 = Popen([engine2_v, '-q', '-t', str(engine2_time), '--fen', *board.fen().split()], stdin=PIPE, stdout=PIPE)
-        
+        engine1 = await asyncio.create_subprocess_exec(
+            engine1_v, '-q', '-t', str(engine1_time), '--fen', *board.fen().split(),
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
+        engine2 = await asyncio.create_subprocess_exec(
+            engine2_v, '-q', '-t', str(engine2_time), '--fen', *board.fen().split(),
+            stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE)
+
         # Set engine colors
         engine1_color = random.choice(["w", "b"])
         engine2_color = "w" if engine1_color == "b" else "b"
@@ -56,24 +59,22 @@ async def main():
         game.headers["Black"] = "Engine 1" if (engine1_color == "b") else "Engine 2"
         
         engine1.stdin.write((engine2_color + '\n').encode())
-        engine1.stdin.flush()
-        engine1.stdout.readline()
+        await engine1.stdout.readline()
 
         engine2.stdin.write((engine1_color + '\n').encode())
-        engine2.stdin.flush()
-        engine2.stdout.readline()
+        await engine2.stdout.readline()
 
         while True:
             if is_engine1_turn:
                  try:
-                    async with asyncio.timeout_at(1.0):
-                        move = await read_move(engine1)
+                    async with asyncio.timeout((engine1_time + 100)/1000):
+                        move = (await engine1.stdout.readline()).decode().strip()
                  except asyncio.TimeoutError:
                     move = ""
             else:
                 try:
-                    async with asyncio.timeout_at(1.0):
-                        move = await read_move(engine2)
+                    async with asyncio.timeout((engine1_time + 100)/1000):
+                        move = (await engine2.stdout.readline()).decode().strip()
                 except asyncio.TimeoutError:
                     move = ""
             
@@ -101,39 +102,40 @@ async def main():
             if (print_moves): print(move)
 
             if is_engine1_turn:
-                fen = engine1.stdout.readline().decode()
+                fen = (await engine1.stdout.readline()).decode()
                 if (print_moves): print(fen, end="")
+
                 engine2.stdin.write((move + '\n').encode())
-
                 try:
-                    engine2.stdin.flush()
-                except OSError:
+                    node = node.add_variation(chess.Move.from_uci(move))
+                except chess.InvalidMoveError:
                     canceled += 1
                     break
-                
-                node = node.add_variation(chess.Move.from_uci(move))
-                engine2.stdout.readline()
-                engine2.stdout.readline()
+
+                await engine2.stdout.readline()
+                await engine2.stdout.readline()
             else:
-                fen = engine2.stdout.readline().decode()
+                fen = (await engine2.stdout.readline()).decode()
                 if (print_moves): print(fen, end="")
-                engine1.stdin.write((move + '\n').encode())
 
+                engine1.stdin.write((move + '\n').encode())
                 try:
-                    engine1.stdin.flush()
-                except OSError:
+                    node = node.add_variation(chess.Move.from_uci(move))
+                except chess.InvalidMoveError:
                     canceled += 1
                     break
-                
-                node = node.add_variation(chess.Move.from_uci(move))
-                engine1.stdout.readline()
-                engine1.stdout.readline()
+
+                await engine1.stdout.readline()
+                await engine1.stdout.readline()
 
             is_engine1_turn = not is_engine1_turn
         
-
-        engine1.kill()
-        engine2.kill()
+        if engine1.returncode is None: 
+            engine1.kill()
+            engine1._transport.close()
+        if engine2.returncode is None: 
+            engine2.kill()
+            engine2._transport.close()
 
         # Save games in PGN
         if (save_games and move != ''):
@@ -148,10 +150,10 @@ async def main():
     print("Games canceled:", canceled)
 
 
-async def read_move(engine:Popen[bytes]) -> str:
-    return engine.stdout.readline().decode().strip()
-
-
 if platform.system() == 'Windows':
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-asyncio.run(main())
+
+loop = asyncio.ProactorEventLoop()
+asyncio.set_event_loop(loop)
+loop.run_until_complete(main())
+loop.close()

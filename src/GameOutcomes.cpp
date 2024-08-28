@@ -13,7 +13,7 @@ HashPositions::HashPositions(unsigned long long initial_hash) {
 }
 
 int HashPositions::updatePositions(const short capture_flag, const unsigned short move_flag, const unsigned long long new_hash, int half_moves) {
-	if (capture_flag == no_capture && move_flag != pawn_move && move_flag != pawn_move_two_squares) { // If no capture or pawn moves
+	if (capture_flag == no_capture && move_flag != pawn_move && move_flag != pawn_move_two_squares) {
 		half_moves++;
 
 		if (move_flag == castle_king_side || move_flag == castle_queen_side) {

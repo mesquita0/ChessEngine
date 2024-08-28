@@ -95,6 +95,9 @@
     <ClInclude Include="TranspositionTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PieceSquareTables.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\Todo.txt">

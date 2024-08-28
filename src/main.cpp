@@ -245,10 +245,11 @@ int main(int argc, char* argv[]) {
 		}
 
 		MoveInfo move_info = makeMove(move, *player, *opponent, hash);
+		hash = move_info.hash;
 
 		short move_flag = getMoveFlag(move);
 		tt.updateMoveRoot(move_info.capture_flag, move_flag);
-		half_moves = hash_positions.updatePositions(move_info.capture_flag, move_flag, move_info.hash, half_moves);
+		half_moves = hash_positions.updatePositions(move_info.capture_flag, move_flag, hash, half_moves);
 
 		if (!player->is_white) full_moves++;
 
@@ -275,7 +276,7 @@ int main(int argc, char* argv[]) {
 			game_outcome = stalemate;
 		}
 	}
-
+	
 	switch (game_outcome) {
 	case checkmate:
 		cout << ((*player).is_white ? "Black wins by checkmate!\n" : "White wins by checkmate!\n");

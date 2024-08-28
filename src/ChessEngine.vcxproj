@@ -163,6 +163,7 @@
     <ClInclude Include="MagicBitboards.h" />
     <ClInclude Include="MakeMoves.h" />
     <ClInclude Include="Perft.h" />
+    <ClInclude Include="PieceSquareTables.h" />
     <ClInclude Include="Pin.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Moves.h" />

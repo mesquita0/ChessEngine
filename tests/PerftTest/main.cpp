@@ -22,8 +22,6 @@ int main() {
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) return -1;
 
-	zobrist_keys = ZobristKeys();
-
 	// Perft test suit positions from http://www.rocechess.ch/perft.html
 	std::ifstream in_file;
 

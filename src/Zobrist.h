@@ -34,4 +34,4 @@ public:
 	uint64_t positionToHash(const Player& player, const Player& opponent) const;
 };
 
-inline ZobristKeys zobrist_keys; // Global Zobrist Keys
+inline ZobristKeys zobrist_keys = ZobristKeys(); // Global Zobrist Keys
