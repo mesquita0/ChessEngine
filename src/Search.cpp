@@ -1,6 +1,7 @@
 #include "Search.h"
 #include "Evaluate.h"
 #include "GameOutcomes.h"
+#include "HistoryTable.h"
 #include "Locations.h"
 #include "MagicBitboards.h"
 #include "MakeMoves.h"
@@ -280,10 +281,12 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 			best_eval = eval;
 			best_move = move;
 
-			// Killer moves
+			// Killer moves and History heuristic
 			if (!isCapture(move, opponent.bitboards.friendly_pieces) && killer_moves[depth][0] != move) {
 				killer_moves[depth][1] = killer_moves[depth][0];
 				killer_moves[depth][0] = move;
+
+				history_table.record(player.is_white, move_flag, getFinalSquare(move), depth);
 			}
 			
 			break;

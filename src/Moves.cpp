@@ -1,4 +1,5 @@
 #include "Moves.h"
+#include "HistoryTable.h"
 #include "MagicBitboards.h"
 #include "Locations.h"
 #include "Player.h"
@@ -468,7 +469,7 @@ void Moves::orderMoves(const Player& player, const Player& opponent, const Entry
 
 		// Score of killer moves
 		if (killer_moves_at_ply && (moves[i] == (*killer_moves_at_ply)[0] || moves[i] == (*killer_moves_at_ply)[1])) {
-			scores[i] += 400;
+			scores[i] += 500;
 			continue;
 		}
 
@@ -478,46 +479,59 @@ void Moves::orderMoves(const Player& player, const Player& opponent, const Entry
 		unsigned short move_flag = getMoveFlag(moves[i]);
 
 		// The switch is a little bit faster than getPieceValue, increases score for promotions
-		int piece_value = 0;
+		int piece_value;
+		PieceType piece_type;
 		switch (move_flag) {
 		case pawn_move:
 			piece_value = 1000;
+			piece_type = Pawn;
 			break;
 		case pawn_move_two_squares:
 			piece_value = 1000;
-			break;
-		case bishop_move:
-			piece_value = 3300;
+			piece_type = Pawn;
 			break;
 		case knight_move:
 			piece_value = 3200;
+			piece_type = Knight;
+			break;
+		case bishop_move:
+			piece_value = 3300;
+			piece_type = Bishop;
 			break;
 		case rook_move:
 			piece_value = 5000;
+			piece_type = Rook;
 			break;
 		case queen_move:
 			piece_value = 9000;
+			piece_type = Queen;
 			break;
 		case king_move:
 			piece_value = 0; // If king caputes then it is a free piece (only considering one move)
+			piece_type = King;
 			break;
 		case en_passant:
 			piece_value = 1000;
+			piece_type = Pawn;
 			break;
 		case promotion_knight:
 			piece_value = 3200;
+			piece_type = Pawn;
 			scores[i] += 2200;
 			break;
 		case promotion_bishop:
 			piece_value = 3300;
+			piece_type = Pawn;
 			scores[i] += 2300;
 			break;
 		case promotion_rook:
 			piece_value = 5000;
+			piece_type = Pawn;
 			scores[i] += 4000;
 			break;
 		case promotion_queen:
 			piece_value = 9000;
+			piece_type = Pawn;
 			scores[i] += 8000;
 			break;
 		default:
@@ -529,6 +543,10 @@ void Moves::orderMoves(const Player& player, const Player& opponent, const Entry
 			scores[i] += 700; // So that equal captures are searched before non-captures 
 			int victim_value = getPieceValue(opponent, final_square);
 			scores[i] += victim_value;
+		}
+		else { // Sort non captures with history heuristic
+			int history_value = history_table.get(player.is_white, piece_type, final_square) * 400; // History values from 0 to 400
+			scores[i] += history_value;
 		}
 
 		// Moving to a defended square
