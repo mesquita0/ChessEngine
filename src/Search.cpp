@@ -16,13 +16,18 @@
 #include <climits>
 #include <thread>
 #include <vector>
+#include <iostream>
 
-int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, int half_moves,
-	int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves, bool reduced = false, bool used_null_move = false);
+int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
+		   int half_moves, int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves, 
+		   bool reduced = false, bool used_null_move = false);
 int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, int num_pieces);
 bool nullMove(Player& player, Player& opponent);
 bool reduceMove(int mv_pos, unsigned short mv, int depth, const MoveInfo& mv_info, const Player& player, 
 				const Player& opponent, bool player_in_check, const std::array<unsigned short, 2>& killer_moves_at_ply);
+
+void repetition(Player& player, Player& opponent, const HashPositions& positions);
+bool deal_repetition(Player& player, Player& opponent, const HashPositions& positions, unsigned long long hash, unsigned long long repeated_position, Entry* entry);
 
 std::atomic_bool timed_out = false;
 int search_id = 0; // Only written by main thread, does not need to be atomic
@@ -41,7 +46,10 @@ SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& pl
 		std::this_thread::sleep_for(time);
 		stopSearch(search_id);
 	});
-	
+
+	// Check for hallucinations of the engine if a position has alredy been repeated twice and principal variation leads to draw by repetition
+	repetition(player, opponent, positions);
+
 	int depth = 1;
 	while (result.evaluation != checkmated_eval && result.evaluation != checkmate_eval && !timed_out) {
 		SearchResult r = FindBestMove(depth, player, opponent, positions, half_moves);
@@ -60,6 +68,9 @@ SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& pl
 SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
 	SearchResult result = { 0, 0, 0 };
 	timed_out = false;
+
+	// Check for hallucinations of the engine if a position has alredy been repeated twice and principal variation leads to draw by repetition
+	repetition(player, opponent, positions);
 
 	for (int i = 1; i <= depth; i++) {
 		result = FindBestMove(i, player, opponent, positions, half_moves);
@@ -96,7 +107,7 @@ SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPosit
 	int branch_id = positions.branch_id;
 	int start = positions.start;
 	positions.branch();
-	unsigned long long current_hash = positions.last_hash();
+	unsigned long long current_hash = positions.lastHash();
 	
 	// Lookup transposition table from previous searches
 	Entry* position_tt = tt.get(current_hash, num_pieces, moves);
@@ -187,7 +198,7 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 	}
 
 	// Lookup transposition table from previous searches
-	unsigned long long current_hash = positions.last_hash();
+	unsigned long long current_hash = positions.lastHash();
 	unsigned short best_move = 0;
 	Entry* position_tt = tt.get(current_hash, num_pieces, moves);
 	if (position_tt && position_tt->depth >= depth) {
@@ -386,4 +397,69 @@ bool reduceMove(int mv_pos, unsigned short mv, int depth, const MoveInfo& mv_inf
 		return false;
 
 	return true;
+}
+
+void repetition(Player& player, Player& opponent, const HashPositions& positions) {
+
+	// Check draw by repetition
+	if (positions.numPositions() >= 5) { // Can only repeat a position twice after at leat 5 moves without captures or pawn moves
+		for (int i = positions.numPositions() - 5; i >= 0; i -= 2) {
+				
+			// Repeated position
+			// Only need to check last position for repetition, since if it was before that, it would have been caught alredy
+			if (positions[i] == positions.lastHash()) {
+
+				unsigned long long attacks = opponent.bitboards.attacks;
+				unsigned long long squares_to_uncheck = player.bitboards.squares_to_uncheck;
+
+				unsigned long long hash = positions.lastHash();
+				Entry* entry = tt.get(hash, std::popcount(player.bitboards.all_pieces), player);
+
+				// Check if Principal Variation leads to draw by repetition
+				deal_repetition(player, opponent, positions, hash, positions[i], entry);
+
+				// Restore attacks and squares to uncheck bitboards
+				opponent.bitboards.attacks = attacks;
+				player.bitboards.squares_to_uncheck = squares_to_uncheck;
+
+				return;
+			}
+		}
+	}
+}
+
+bool deal_repetition(Player& player, Player& opponent, const HashPositions& positions, unsigned long long hash, unsigned long long repeated_position, Entry* entry) {
+	if (!entry) return false;
+
+	int eval = entry->eval;
+	MoveInfo mv_inf = makeMove(entry->best_move, player, opponent, hash);
+	hash = mv_inf.hash;
+
+	// Repetition of moves
+	if (hash == repeated_position) {
+		
+		// If player is winning then it is an hallucination (since next move is a draw), so the evaluation is an upper bound.
+		// Otherwise, player can get a guaranteed draw, so evaluation is 0.
+		if (eval > 0) entry->node_flag = LowerBound;
+		else entry->node_flag = Exact;
+		entry->eval = 0;
+		
+		unmakeMove(entry->best_move, player, opponent, mv_inf);
+		return true;
+	}
+	else if (!positions.contains(hash)) { // Return false if new position is not repeated
+		unmakeMove(entry->best_move, player, opponent, mv_inf);
+		return false;
+	}
+
+	Entry* new_entry = tt.get(hash, std::popcount(player.bitboards.all_pieces), opponent);
+
+	bool result = deal_repetition(opponent, player, positions, hash, repeated_position, new_entry);
+	unmakeMove(entry->best_move, player, opponent, mv_inf);
+
+	// Delete the rest of the PV line from the tt
+	if (result)
+		entry->num_pieces = 100;
+
+	return result;
 }

@@ -98,3 +98,5 @@ inline unsigned short getMoveFlag(unsigned short move) { return move & move_flag
 inline location getStartSquare(unsigned short move) { return (move >> 6) & square_mask; }
 inline location getFinalSquare(unsigned short move) { return move & square_mask; }
 inline bool isCapture(unsigned short move, unsigned long long opponent_pieces) { return ( (1LL << getFinalSquare(move)) & opponent_pieces ); }
+
+bool isPseudoLegal(unsigned short move, const Player& player);

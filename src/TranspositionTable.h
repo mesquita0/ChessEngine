@@ -2,6 +2,7 @@
 #include <array>
 #include <cstdint>
 #include <vector>
+#include "Player.h"
 
 class Moves;
 
@@ -53,6 +54,7 @@ public:
 	void store(uint64_t hash, unsigned short best_move, uint8_t depth, nodeFlag node_flag, int16_t eval, uint8_t num_pieces, Entry* pos_entry);
 
 	Entry* get(uint64_t hash, uint32_t num_pieces, const Moves& moves);
+	Entry* get(uint64_t hash, uint32_t num_pieces, const Player& player);
 
 	void updateMoveRoot(short capture_flag, short move_flag);
 };

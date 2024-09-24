@@ -48,18 +48,18 @@ GameOutcome getGameOutcome(const Player& player, const Player& opponent, const H
 	}
 
 	// Check draw by repetition
-	if (positions.num_positions() > 8) { // Can only repeat position 3 times after at leat 9 moves without captures or pawn moves
+	if (positions.numPositions() >= 9) { // Can only repeat position 3 times after at leat 9 moves without captures or pawn moves
 
 		// Position to be repeated is the last one, since if another position
 		// was repeated 3 times the game would have alredy ended.
-		unsigned long long repeated_pos = positions.last_hash();
+		unsigned long long repeated_pos = positions.lastHash();
 		int count = 1;
 
 		// A position can only repeat after at leat two moves for each side
-		int i = positions.num_positions() - 5 + positions.start;
+		int i = positions.numPositions() - 5;
 
 		while (i >= 0) {
-			if (positions.positions[i] == repeated_pos) {
+			if (positions[i] == repeated_pos) {
 				if (++count == 3) {
 					return draw_by_repetition;
 				}

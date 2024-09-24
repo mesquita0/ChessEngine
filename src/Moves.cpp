@@ -479,7 +479,7 @@ void Moves::orderMoves(const Player& player, const Player& opponent, const Entry
 		unsigned short move_flag = getMoveFlag(moves[i]);
 
 		// The switch is a little bit faster than getPieceValue, increases score for promotions
-		int piece_value;
+		int piece_value = 0;
 		PieceType piece_type;
 		switch (move_flag) {
 		case pawn_move:
@@ -508,6 +508,12 @@ void Moves::orderMoves(const Player& player, const Player& opponent, const Entry
 			break;
 		case king_move:
 			piece_value = 0; // If king caputes then it is a free piece (only considering one move)
+			piece_type = King;
+			break;
+		case castle_king_side:
+			piece_type = King;
+			break;
+		case castle_queen_side:
 			piece_type = King;
 			break;
 		case en_passant:
@@ -849,4 +855,66 @@ void setPin(Player& player, const Player& opponent, location piece_location, boo
 		player.pins[index_pinned_piece].squares_to_unpin = squares_to_uncheck;
 		player.pins[index_pinned_piece].id_move_pinned = player.move_id;
 	}
+}
+
+bool isPseudoLegal(unsigned short move, const Player& player) {
+	unsigned short move_flag = getMoveFlag(move);
+	location start_square = getStartSquare(move);
+	location final_square = getFinalSquare(move);
+
+	// Check if there isn't a player's piece in the final square
+	if ((1LL << final_square) & player.bitboards.friendly_pieces) return false;
+
+	unsigned long long piece_bitboard = 0;
+	switch (move_flag) {
+	case pawn_move:
+		piece_bitboard = player.bitboards.pawns;
+		break;
+	case pawn_move_two_squares:
+		piece_bitboard = player.bitboards.pawns;
+		break;
+	case knight_move:
+		piece_bitboard = player.bitboards.knights;
+		break;
+	case bishop_move:
+		piece_bitboard = player.bitboards.bishops;
+		break;
+	case rook_move:
+		piece_bitboard = player.bitboards.rooks;
+		break;
+	case queen_move:
+		piece_bitboard = player.bitboards.queens;
+		break;
+	case king_move:
+		piece_bitboard = player.bitboards.king;
+		break;
+	case castle_king_side:
+		piece_bitboard = player.bitboards.king;
+		break;
+	case castle_queen_side:
+		piece_bitboard = player.bitboards.king;
+		break;
+	case en_passant:
+		piece_bitboard = player.bitboards.pawns;
+		break;
+	case promotion_knight:
+		piece_bitboard = player.bitboards.pawns;
+		break;
+	case promotion_bishop:
+		piece_bitboard = player.bitboards.pawns;
+		break;
+	case promotion_rook:
+		piece_bitboard = player.bitboards.pawns;
+		break;
+	case promotion_queen:
+		piece_bitboard = player.bitboards.pawns;
+		break;
+	default:
+		break;
+	}
+
+	// Check if there's a player piece of the correct type in the start square
+	if (!((1LL << start_square) & piece_bitboard)) return false;
+
+	return true;
 }

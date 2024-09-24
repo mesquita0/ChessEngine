@@ -25,7 +25,7 @@ TranspositionTable::TranspositionTable(size_t size_mb, uint64_t all_pieces) {
 void TranspositionTable::store(uint64_t hash, unsigned short best_move, uint8_t depth, nodeFlag node_flag, int16_t eval, uint8_t num_pieces, Entry* pos_entry) {
 
 	// Avoid storing the same position multiple times
-	if (pos_entry) {
+	if (pos_entry && pos_entry->hash == unsigned(hash >> 32)) {
 		if (pos_entry->depth < depth || (pos_entry->depth == depth && pos_entry->node_flag != Exact && pos_entry->node_flag == Exact)) {
 			*pos_entry = Entry{ unsigned(hash >> 32), best_move, depth, node_flag, eval, current_generation, num_pieces };
 		}
@@ -72,6 +72,18 @@ Entry* TranspositionTable::get(uint64_t hash, uint32_t num_pieces, const Moves& 
 	uint32_t upper_bits_hash = hash >> 32;
 	for (Entry& entry : table[index]) {
 		if (entry.hash == upper_bits_hash && entry.num_pieces == num_pieces && moves.isMoveLegal(entry.best_move)) {
+			entry.generation_last_used = current_generation;
+			return &entry;
+		}
+	}
+	return nullptr;
+}
+
+Entry* TranspositionTable::get(uint64_t hash, uint32_t num_pieces, const Player& player){
+	uint32_t index = hash & index_mask;
+	uint32_t upper_bits_hash = hash >> 32;
+	for (Entry& entry : table[index]) {
+		if (entry.hash == upper_bits_hash && entry.num_pieces == num_pieces && isPseudoLegal(entry.best_move, player)) {
 			entry.generation_last_used = current_generation;
 			return &entry;
 		}

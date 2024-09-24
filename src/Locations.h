@@ -2,7 +2,7 @@
 
 /*
 	A location stores the square that the piece is in, 
-	0 corresponds to a8, 1 to b8, ..., 8 to a7, ..., 64 to h1.
+	0 corresponds to a1, 1 to b1, ..., 8 to a2, ..., 64 to h8.
 */
 typedef unsigned char location;
 
