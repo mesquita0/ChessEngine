@@ -9,11 +9,11 @@ async def main():
     win_eng2 = 0
     draws = 0
     canceled = 0
-    engine1_v = ".\Versions\V6"
-    engine2_v = ".\Versions\V6"
+    engine1_v = ".\Versions\ChessEngine"
+    engine2_v = ".\Versions\V8"
     engine1_time = 100
     engine2_time = 100
-    N = 500
+    N = 100
     NUM_RANDOM_MOVES_EACH = 2
     initial_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     print_moves = False
@@ -77,7 +77,7 @@ async def main():
                         move = (await engine2.stdout.readline()).decode().strip()
                 except asyncio.TimeoutError:
                     move = ""
-            
+
             if len(move) not in [4, 5]:
                 print(f"Game {i} outcome: " + move)
                 if (move[:4] == "Draw"):
