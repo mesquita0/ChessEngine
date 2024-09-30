@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClCompile Include="Evaluate\Accumulator.cpp" />
     <ClCompile Include="Evaluate\ClippedReLU.cpp" />
-    <ClCompile Include="Evaluate\Conversor.cpp" />
     <ClCompile Include="Evaluate\EvaluateNNUE.cpp" />
     <ClCompile Include="Evaluate\LinearLayer.cpp" />
     <ClCompile Include="GenerateData\main.cpp" />
@@ -29,7 +28,6 @@
   <ItemGroup>
     <ClInclude Include="Evaluate\Accumulator.h" />
     <ClInclude Include="Evaluate\ClippedReLU.h" />
-    <ClInclude Include="Evaluate\Conversor.h" />
     <ClInclude Include="Evaluate\EvaluateNNUE.h" />
     <ClInclude Include="Evaluate\LinearLayer.h" />
   </ItemGroup>

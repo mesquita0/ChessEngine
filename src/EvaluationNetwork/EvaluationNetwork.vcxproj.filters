@@ -30,9 +30,6 @@
     <ClCompile Include="Evaluate\ClippedReLU.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Evaluate\Conversor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Evaluate\EvaluateNNUE.h">
@@ -45,9 +42,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Evaluate\ClippedReLU.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Evaluate\Conversor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
