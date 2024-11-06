@@ -22,6 +22,7 @@
     <ClCompile Include="Evaluate\Accumulator.cpp" />
     <ClCompile Include="Evaluate\ClippedReLU.cpp" />
     <ClCompile Include="Evaluate\EvaluateNNUE.cpp" />
+    <ClCompile Include="Evaluate\InputNNUE.cpp" />
     <ClCompile Include="Evaluate\LinearLayer.cpp" />
     <ClCompile Include="GenerateData\main.cpp" />
   </ItemGroup>
@@ -29,7 +30,9 @@
     <ClInclude Include="Evaluate\Accumulator.h" />
     <ClInclude Include="Evaluate\ClippedReLU.h" />
     <ClInclude Include="Evaluate\EvaluateNNUE.h" />
+    <ClInclude Include="Evaluate\InputNNUE.h" />
     <ClInclude Include="Evaluate\LinearLayer.h" />
+    <ClInclude Include="Evaluate\LoadWeights.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

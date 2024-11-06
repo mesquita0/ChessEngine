@@ -9,7 +9,7 @@ struct Position {
 };
 
 std::string PositionToFEN(const Player& player, const Player& opponent, int half_moves, int full_moves);
-Position FENToPosition(const std::string& FEN);
+Position FENToPosition(const std::string& FEN, bool generate_attacks=true, bool set_pins=true);
 std::string locationToNotationSquare(int square);
 location notationSquareToLocation(const std::string& square);
 void printBoard(const Player& player, const Player& opponent);
