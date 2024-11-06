@@ -1,7 +1,8 @@
 #pragma once
 #include "Locations.h"
 #include "Player.h"
-#include "HistoryTable.h" // TODO
+#include "PieceTypes.h"
+#include <vector>
 
 /*
 	Inputs of NN (example white to move):
@@ -29,8 +30,7 @@
 */
 
 struct NNUEIndex {
-	int index_side_move;
-	int index_side_not_move;
+	int index_sm, index_snm;
 };
 
 inline int flip_square(int square) {
@@ -44,4 +44,5 @@ inline int flip_square(int square) {
 	return (56 - square + 2 * file);
 }
 
-NNUEIndex getIndexNNUE(location square, bool is_white_piece, PieceType piece_type, const Player& player, const Player& opponent);
+NNUEIndex getIndexNNUE(location square, PieceType piece_type, const Player& player, const Player& opponent);
+std::vector<NNUEIndex> getIndexesNNUE(const Player& player, const Player& opponent);
