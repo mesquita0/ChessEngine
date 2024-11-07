@@ -1,18 +1,24 @@
 #include "LinearLayer.h"
+#include "LoadWeights.h"
 #include <cassert>
 #include <cstdint>
 #include <immintrin.h>
+#include <string>
 
 LinearLayer::LinearLayer(int num_inputs, int num_outputs) {
 	this->num_inputs = num_inputs;
 	this->num_outputs = num_outputs;
+
+	bias = static_cast<int32_t*>(_mm_malloc(num_outputs * sizeof(int32_t), 32));
+	weights = static_cast<int8_t*>(_mm_malloc(num_inputs * num_outputs * sizeof(int8_t), 32));
 }
 
 LinearLayer::~LinearLayer() {
-
+	_mm_free(bias);
+	_mm_free(weights);
 }
 
-void LinearLayer::process_linear_layer(const int8_t* input, int32_t* output) const {
+void LinearLayer::processLinearLayer(int8_t* const input, int32_t* output) const {
 
 	assert(num_inputs % 32 == 0, "Number of input neurons has to be a multiple of 32.");
 	assert((num_outputs % 4 == 0) || (num_outputs == 1), "Number of output neurons has to be a multiple of 4 (except output layer).");
@@ -21,7 +27,7 @@ void LinearLayer::process_linear_layer(const int8_t* input, int32_t* output) con
 		assert(num_inputs == 32, "Can only have 32 neuros connected to the output layer.");
 
 		// Load inputs
-		__m256i inp = _mm256_load_si256((__m256i*) input);
+		const __m256i inp = _mm256_load_si256((__m256i*) input);
 
 		// (32 i8s) * (32 i8s) -> (16 i16s)
 		// Multiplies input vector by weights and add neighbour results.
@@ -41,11 +47,11 @@ void LinearLayer::process_linear_layer(const int8_t* input, int32_t* output) con
 		result = _mm256_hadd_epi32(result, zeros); // (4 i32s) -> (2 i32s)
 
 		// Separate the two scalars into different registers
-		__m128i result_low = _mm256_castsi256_si128(result);
-		__m128i result_high = _mm256_extracti128_si256(result, 1);
+		const __m128i result_low = _mm256_castsi256_si128(result);
+		const __m128i result_high = _mm256_extracti128_si256(result, 1);
 
 		// Add them and the bias, then store the result in the output
-		__m128i out = _mm_add_epi32(result_low, result_high);
+		const __m128i out = _mm_add_epi32(result_low, result_high);
 		output[0] = _mm_extract_epi32(out, 0) + bias[0];
 	}
 	else {
@@ -58,10 +64,10 @@ void LinearLayer::process_linear_layer(const int8_t* input, int32_t* output) con
 
 		for (int i = 0; i < num_outputs; i += 4) {
 
-			int8_t* const weights_0 = weights + (i + 0) * num_outputs;
-			int8_t* const weights_1 = weights + (i + 1) * num_outputs;
-			int8_t* const weights_2 = weights + (i + 2) * num_outputs;
-			int8_t* const weights_3 = weights + (i + 3) * num_outputs;
+			int8_t* const weights_0 = weights + (i + 0) * num_inputs;
+			int8_t* const weights_1 = weights + (i + 1) * num_inputs;
+			int8_t* const weights_2 = weights + (i + 2) * num_inputs;
+			int8_t* const weights_3 = weights + (i + 3) * num_inputs;
 
 			__m256i accumulator_0 = _mm256_setzero_si256();
 			__m256i accumulator_1 = _mm256_setzero_si256();
@@ -70,7 +76,7 @@ void LinearLayer::process_linear_layer(const int8_t* input, int32_t* output) con
 
 			for (int j = 0; j < num_inputs; j += 32) {
 				// Load inputs
-				__m256i inp = _mm256_load_si256((__m256i*) &input[j]);
+				const __m256i inp = _mm256_load_si256((__m256i*) &input[j]);
 				
 				// (32 i8s) * (32 i8s) -> (16 i16s)
 				// Multiplies input vector by weights and add neighbour results
@@ -98,16 +104,16 @@ void LinearLayer::process_linear_layer(const int8_t* input, int32_t* output) con
 
 			// horizontal adding will result in the output like:
 			// (acc0, acc0, acc1, acc1, acc0, acc0, acc1, acc1)
-			__m256i tmp_1 = _mm256_hadd_epi32(accumulator_0, accumulator_1);
-			__m256i tmp_2 = _mm256_hadd_epi32(accumulator_2, accumulator_3);
+			const __m256i tmp_1 = _mm256_hadd_epi32(accumulator_0, accumulator_1);
+			const __m256i tmp_2 = _mm256_hadd_epi32(accumulator_2, accumulator_3);
 
 			// Then by doing it again we get the following:
 			// (acc0, acc1, acc2, acc3, acc0, acc1, acc2, acc3)
-			__m256i tmp_3 = _mm256_hadd_epi32(tmp_1, tmp_2);
+			const __m256i tmp_3 = _mm256_hadd_epi32(tmp_1, tmp_2);
 
 			// Then add low and high parts of the register to get the final result
-			__m128i tmp_3_low = _mm256_castsi256_si128(tmp_3);
-			__m128i tmp_3_high = _mm256_extracti128_si256(tmp_3, 1);
+			const __m128i tmp_3_low = _mm256_castsi256_si128(tmp_3);
+			const __m128i tmp_3_high = _mm256_extracti128_si256(tmp_3, 1);
 			__m128i result = _mm_add_epi32(tmp_3_low, tmp_3_high);
 
 			// Add bias to all 4 outputs
@@ -116,4 +122,9 @@ void LinearLayer::process_linear_layer(const int8_t* input, int32_t* output) con
 			_mm_store_si128((__m128i *) &output[i], result);
 		}
 	}
+}
+
+void LinearLayer::setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights) {
+	loadFromFile(bias, num_outputs, file_biases);
+	loadFromFile(weights, num_inputs * num_outputs, file_weights);
 }

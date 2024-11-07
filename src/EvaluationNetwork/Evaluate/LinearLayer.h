@@ -1,13 +1,18 @@
 #pragma once
 #include <cstdint>
+#include <filesystem>
 
 struct LinearLayer {
+private:
 	int32_t*	bias;
 	int8_t*		weights;
 	int			num_inputs, num_outputs;
 
+public:
 	LinearLayer(int num_inputs, int num_outputs);
 	~LinearLayer();
 	
-	void process_linear_layer(const int8_t* input, int32_t* output) const;
+	void processLinearLayer(int8_t* const input, int32_t* output) const;
+
+	void setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights);
 };
