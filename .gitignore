@@ -6,6 +6,9 @@
 Dependencies/
 *.txt
 
+**/EvaluationNetwork/Train/Model-*/
+**/EvaluationNetwork/Train/cache/
+
 # User-specific files
 *.rsuser
 *.suo
