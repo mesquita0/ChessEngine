@@ -104,6 +104,9 @@
     <ClInclude Include="HistoryTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PieceTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\Todo.txt">

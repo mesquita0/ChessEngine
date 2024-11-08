@@ -1,8 +1,6 @@
 #pragma once
 #include "Locations.h"
 
-enum PieceType { Pawn, Knight, Bishop, Rook, Queen, King};
-
 struct HistoryTable
 {
 private:

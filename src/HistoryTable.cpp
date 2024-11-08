@@ -1,6 +1,7 @@
 #include "HistoryTable.h"
 #include "Locations.h"
 #include "Moves.h"
+#include "PieceTypes.h"
 
 void HistoryTable::record(bool is_white, unsigned short move_flag, location final_square, int depth) {
 	PieceType piece_type = Pawn;
