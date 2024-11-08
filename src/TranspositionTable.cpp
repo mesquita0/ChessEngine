@@ -2,6 +2,7 @@
 #include "MakeMoves.h"
 #include "Moves.h"
 #include <bit>
+#include <cassert>
 #include <cstdint>
 
 void Bucket::updateSmallestDepth() {
@@ -15,6 +16,7 @@ void Bucket::updateSmallestDepth() {
 }
 
 TranspositionTable::TranspositionTable(size_t size_mb, uint64_t all_pieces) {
+	assert((size_mb & (size_mb - 1)) == 0, "size_mb must be a power of two.");
 	size_t max_entries = size_mb * 1024 * 1024 / sizeof(Bucket);
 	table.resize(max_entries);
 	index_mask = max_entries - 1; // max_entries is a power of two (...0010000...) so it becomes ...0001111...

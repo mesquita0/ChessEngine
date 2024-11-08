@@ -1,7 +1,8 @@
-#include "Moves.h"
 #include "HistoryTable.h"
-#include "MagicBitboards.h"
 #include "Locations.h"
+#include "MagicBitboards.h"
+#include "Moves.h"
+#include "PieceTypes.h"
 #include "Player.h"
 #include "TranspositionTable.h"
 #include <array>
