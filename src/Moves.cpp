@@ -1,7 +1,7 @@
+#include "Moves.h"
 #include "HistoryTable.h"
 #include "Locations.h"
 #include "MagicBitboards.h"
-#include "Moves.h"
 #include "PieceTypes.h"
 #include "Player.h"
 #include "TranspositionTable.h"
@@ -858,8 +858,30 @@ void setPin(Player& player, const Player& opponent, location piece_location, boo
 	}
 }
 
+PieceType getPieceType(unsigned short move) {
+	unsigned short flag = getMoveFlag(move);
+
+	switch (flag) {
+		case pawn_move: return Pawn;
+		case pawn_move_two_squares: return Pawn;
+		case knight_move: return Knight;
+		case bishop_move: return Bishop;
+		case rook_move: return Rook;
+		case queen_move: return Queen;
+		case king_move: return King;
+		case castle_king_side: return King;
+		case castle_queen_side: return King;
+		case en_passant: return Pawn;
+		case promotion_knight: return Pawn;
+		case promotion_bishop: return Pawn;
+		case promotion_rook: return Pawn;
+		case promotion_queen: return Pawn;
+		default: return InvalidPiece;
+	}
+}
+
 bool isPseudoLegal(unsigned short move, const Player& player) {
-	unsigned short move_flag = getMoveFlag(move);
+	PieceType piece_type = getPieceType(move);
 	location start_square = getStartSquare(move);
 	location final_square = getFinalSquare(move);
 
@@ -867,51 +889,27 @@ bool isPseudoLegal(unsigned short move, const Player& player) {
 	if ((1LL << final_square) & player.bitboards.friendly_pieces) return false;
 
 	unsigned long long piece_bitboard = 0;
-	switch (move_flag) {
-	case pawn_move:
+	switch (piece_type) {
+	case Pawn:
 		piece_bitboard = player.bitboards.pawns;
 		break;
-	case pawn_move_two_squares:
-		piece_bitboard = player.bitboards.pawns;
-		break;
-	case knight_move:
+	case Knight:
 		piece_bitboard = player.bitboards.knights;
 		break;
-	case bishop_move:
+	case Bishop:
 		piece_bitboard = player.bitboards.bishops;
 		break;
-	case rook_move:
+	case Rook:
 		piece_bitboard = player.bitboards.rooks;
 		break;
-	case queen_move:
+	case Queen:
 		piece_bitboard = player.bitboards.queens;
 		break;
-	case king_move:
+	case King:
 		piece_bitboard = player.bitboards.king;
 		break;
-	case castle_king_side:
-		piece_bitboard = player.bitboards.king;
-		break;
-	case castle_queen_side:
-		piece_bitboard = player.bitboards.king;
-		break;
-	case en_passant:
-		piece_bitboard = player.bitboards.pawns;
-		break;
-	case promotion_knight:
-		piece_bitboard = player.bitboards.pawns;
-		break;
-	case promotion_bishop:
-		piece_bitboard = player.bitboards.pawns;
-		break;
-	case promotion_rook:
-		piece_bitboard = player.bitboards.pawns;
-		break;
-	case promotion_queen:
-		piece_bitboard = player.bitboards.pawns;
-		break;
-	default:
-		break;
+	default: 
+		return false; // move is not valid so it is not legal
 	}
 
 	// Check if there's a player piece of the correct type in the start square
