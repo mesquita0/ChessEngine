@@ -1,13 +1,16 @@
 #pragma once
 #include "Locations.h"
+#include "PieceTypes.h"
 #include "Player.h"
 #include <array>
 #include <climits>
 
 struct Entry;
 
-constexpr unsigned short NULL_MOVE = 0;
 constexpr int max_num_moves = 218;
+
+constexpr unsigned short NULL_MOVE = 0;
+
 constexpr unsigned short castle_king_side = 0b0001 << 12;
 constexpr unsigned short castle_queen_side = 0b0010 << 12;
 constexpr unsigned short en_passant = 0b0011 << 12;
@@ -22,6 +25,7 @@ constexpr unsigned short bishop_move = 0b1011 << 12;
 constexpr unsigned short rook_move = 0b1100 << 12;
 constexpr unsigned short queen_move = 0b1101 << 12;
 constexpr unsigned short king_move = 0b1110 << 12;
+
 static constexpr unsigned short move_flag_mask = 0b1111 << 12;
 static constexpr unsigned short square_mask = 0b111111;
 
@@ -98,5 +102,7 @@ inline unsigned short getMoveFlag(unsigned short move) { return move & move_flag
 inline location getStartSquare(unsigned short move) { return (move >> 6) & square_mask; }
 inline location getFinalSquare(unsigned short move) { return move & square_mask; }
 inline bool isCapture(unsigned short move, unsigned long long opponent_pieces) { return ( (1LL << getFinalSquare(move)) & opponent_pieces ); }
+
+PieceType getPieceType(unsigned short move);
 
 bool isPseudoLegal(unsigned short move, const Player& player);
