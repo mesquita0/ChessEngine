@@ -38,23 +38,3 @@ int NNUE::evaluate() {
 
 	return output_neuron / scale;
 }
-
-void NNUE::setPosition(const Player& player, const Player& opponent) {
-	accumulator.set(player, opponent);
-}
-
-void NNUE::movePiece(PieceType piece_type, location initial_loc, location final_loc, const Player& player, const Player& opponent) {
-	accumulator.movePiece(piece_type, initial_loc, final_loc, player, opponent);
-}
-
-void NNUE::addPiece(PieceType piece_type, location loc, const Player& player, const Player& opponent) {
-	accumulator.addPiece(piece_type, loc, player, opponent);
-}
-
-void NNUE::removePiece(PieceType piece_type, location loc, const Player& player, const Player& opponent) {
-	accumulator.removePiece(piece_type, loc, player, opponent);
-}
-
-void NNUE::flipSides() {
-	accumulator.flipSides();
-}

@@ -9,6 +9,7 @@
 #include "Search.h"
 #include "TranspositionTable.h"
 #include "Zobrist.h"
+#include "EvaluationNetwork/Evaluate/EvaluateNNUE.h"
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -121,7 +122,10 @@ int main(int argc, char* argv[]) {
 	// Generate Zobrist keys and allocate transposition table
 	unsigned long long hash = zobrist_keys.positionToHash(first_to_move, second_to_move);
 	tt = TranspositionTable(256, first_to_move.bitboards.all_pieces); // Size in mb, must be a power of two
-	
+
+	// Set up nnue
+	nnue.setPosition(first_to_move, second_to_move);
+
 	Player* player = &first_to_move;
 	Player* opponent = &second_to_move;
 
@@ -235,7 +239,7 @@ int main(int argc, char* argv[]) {
 				}
 			}
 
-			if (!quiet_mode){
+			if (!quiet_mode) {
 				cout << " Evaluation: " << search_result.evaluation;
 				cout << " Depth: " << search_result.depth;
 				cout << '\n';

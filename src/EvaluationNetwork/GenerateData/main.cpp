@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string>
 #include "../Evaluate/InputNNUE.h"
+#include "../Evaluate/EvaluateNNUE.h"
 #include "Position.h"
 #include "MagicBitboards.h"
 #include "Evaluate.h"
@@ -45,6 +46,7 @@ int main() {
 
 	std::getline(fin, line); // Ignore first line of csv
 	double error = 0;
+	double error_nnue = 0;
 	unsigned long long n_positions = 0;
 
 	while (std::getline(fin, line)) {
@@ -87,16 +89,26 @@ int main() {
 			fout.write(reinterpret_cast<const char*>(&locations_1s_snm), sizeof locations_1s_snm);
 			fout.write(reinterpret_cast<const char*>(&evaluation), sizeof evaluation);
 		}
+
 		if (calculate_loss) {
+			// Compute loss normal evaluation function
 			int ev = Evaluate(position.player, position.opponent, std::popcount(position.player.bitboards.all_pieces));
 			if (abs(ev) > Max_Eval) ev = Max_Eval * ((ev < 0) ? -1 : 1);
 			error += loss(ev, evaluation);
+
+			// Compute loss nnue
+			nnue.setPosition(position.player, position.opponent);
+			ev = nnue.evaluate();
+			if (abs(ev) > Max_Eval) ev = Max_Eval * ((ev < 0) ? -1 : 1);
+			error_nnue += loss(ev, evaluation);
+
 			n_positions++;
 		}
 	}
 
 	if (calculate_loss) {
-		std::cout << (error / n_positions);
+		std::cout << "Error evaluation function: " << (error / n_positions) << '\n'
+				  << "Error nnue evaluation:     " << (error_nnue / n_positions) << '\n';
 	}
 
 	fin.close();

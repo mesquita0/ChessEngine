@@ -34,6 +34,6 @@ int main() {
 		
 		int new_ev_root_position = nnue.evaluate();
 		if (new_ev_root_position != ev_root_position) 
-			std::cout << "Failed! (unmake move), expected " << ev_root_position << ", got " << new_ev_root_position << '\n';
+			std::cout << "Failed (unmake move), expected " << ev_root_position << ", got " << new_ev_root_position << '\n';
 	}
 }
