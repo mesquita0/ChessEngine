@@ -138,7 +138,10 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\src\EvaluationNetwork\EvaluationNetwork.vcxproj">
+    <ProjectReference Include="..\..\src\ChessEngine.vcxproj">
+      <Project>{5cd1a975-7bed-4ed5-babd-c39f4a1da888}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\src\EvaluationNetwork\EvaluationNetwork.vcxproj">
       <Project>{63d7436b-e199-4fb8-b554-3fe04e95db87}</Project>
     </ProjectReference>
   </ItemGroup>

@@ -116,7 +116,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Position.obj;Player.obj;Moves.obj;MagicBitboards.obj;Perft.obj;MakeMoves.obj;Serializer.obj;Zobrist.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Position.obj;Player.obj;Moves.obj;MagicBitboards.obj;Perft.obj;MakeMoves.obj;Serializer.obj;Zobrist.obj;Accumulator.obj;CippedReLU.obj;EvaluateNNUE.obj;InputNNUE.obj;LinearLayer.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\Generate Magic Bitboards\x64\Debug;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\x64\Debug;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -136,8 +136,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Position.obj;Player.obj;Moves.obj;MagicBitboards.obj;Perft.obj;MakeMoves.obj;Serializer.obj;Zobrist.obj;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\x64\Release;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\Generate Magic Bitboards\x64\Release;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Position.obj;Player.obj;Moves.obj;MagicBitboards.obj;Perft.obj;MakeMoves.obj;Serializer.obj;Zobrist.obj;Accumulator.obj;ClippedReLU.obj;EvaluateNNUE.obj;InputNNUE.obj;LinearLayer.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\x64\Release;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\EvaluationNetwork\x64\Release;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\Generate Magic Bitboards\x64\Release;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <Profile>false</Profile>
     </Link>
   </ItemDefinitionGroup>
