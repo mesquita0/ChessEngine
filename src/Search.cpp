@@ -337,7 +337,7 @@ int Search(int depth, int alpha, int beta, Player& player, Player& opponent, Has
 int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, int num_pieces) {
 	Moves moves;
 
-	// Generates captures and updates player attacks bitboard (needed in Evaluate), does not
+	// Generates captures updates player attacks bitboard (needed in Evaluate), does not
 	// include king attacks to squares that are defedend or attacks of pinned pieces that 
 	// would leave the king in check if played.
 	moves.generateCaptures(player, opponent);

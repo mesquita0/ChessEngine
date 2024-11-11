@@ -1,7 +1,9 @@
 #include "MakeMoves.h"
 #include "MagicBitboards.h"
 #include "Moves.h"
+#include "PieceTypes.h"
 #include "Zobrist.h"
+#include "EvaluationNetwork/Evaluate/EvaluateNNUE.h"
 
 MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash) {
 	unsigned short flag = getMoveFlag(move);
@@ -24,12 +26,14 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		opponent.locations.en_passant_target = 0;
 	}
 
-	// Update bitboards and hash
+	// Update bitboards, hash and NNUE
 	location location_en_passant_pawn;
 	switch (flag) {
 	case pawn_move:
 		player.bitboards.removePawn(start_square);
 		player.bitboards.addPawn(final_square);
+
+		nnue.movePiece(Pawn, start_square, final_square, player, opponent);
 
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_pawn[start_square];
@@ -45,6 +49,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 	case pawn_move_two_squares:
 		player.bitboards.removePawn(start_square);
 		player.bitboards.addPawn(final_square);
+
+		nnue.movePiece(Pawn, start_square, final_square, player, opponent);
+
 		player.locations.en_passant_target = player.is_white ? (final_square - 8) : (final_square + 8);
 
 		hash ^= zobrist_keys.en_passant_file[final_square % 8];
@@ -63,6 +70,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.removeKnight(start_square);
 		player.bitboards.addKnight(final_square);
 
+		nnue.movePiece(Knight, start_square, final_square, player, opponent);
+
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_knight[start_square];
 			hash ^= zobrist_keys.white_knight[final_square];
@@ -78,6 +87,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.removeBishop(start_square);
 		player.bitboards.addBishop(final_square);
 
+		nnue.movePiece(Bishop, start_square, final_square, player, opponent);
+
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_bishop[start_square];
 			hash ^= zobrist_keys.white_bishop[final_square];
@@ -92,6 +103,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 	case rook_move:
 		player.bitboards.removeRook(start_square);
 		player.bitboards.addRook(final_square);
+
+		nnue.movePiece(Rook, start_square, final_square, player, opponent);
 
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_rook[start_square];
@@ -120,6 +133,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.removeQueen(start_square);
 		player.bitboards.addQueen(final_square);
 
+		nnue.movePiece(Queen, start_square, final_square, player, opponent);
+
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_queen[start_square];
 			hash ^= zobrist_keys.white_queen[final_square];
@@ -135,6 +150,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.removeKing(start_square);
 		player.bitboards.addKing(final_square);
 		player.locations.moveKing(final_square);
+
+		nnue.setPosition(player, opponent);
 
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_king[start_square];
@@ -179,6 +196,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.removeRook(initial_square_rook_king_side);
 		player.bitboards.addRook(final_square - 1);
 
+		nnue.setPosition(player, opponent);
+
 		// Update hash
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_king[start_square];
@@ -215,6 +234,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.removeRook(initial_square_rook_queen_side);
 		player.bitboards.addRook(final_square + 1);
 
+		nnue.setPosition(player, opponent);
+
 		// Update hash
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_king[start_square];
@@ -241,6 +262,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		opponent.bitboards.removePawn(location_en_passant_pawn);
 		opponent.num_pawns--;
 
+		nnue.movePiece(Pawn, start_square, final_square, player, opponent);
+		nnue.removePiece(Pawn, location_en_passant_pawn, opponent, player);
+
 		// Update hash
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_pawn[start_square];
@@ -261,6 +285,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.num_pawns--;
 		player.num_knights++;
 
+		nnue.removePiece(Pawn, start_square, player, opponent);
+		nnue.addPiece(Knight, final_square, player, opponent);
+
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_pawn[start_square];
 			hash ^= zobrist_keys.white_knight[final_square];
@@ -277,6 +304,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.addBishop(final_square);
 		player.num_pawns--;
 		player.num_bishops++;
+
+		nnue.removePiece(Pawn, start_square, player, opponent);
+		nnue.addPiece(Bishop, final_square, player, opponent);
 
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_pawn[start_square];
@@ -295,6 +325,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.num_pawns--;
 		player.num_rooks++;
 
+		nnue.removePiece(Pawn, start_square, player, opponent);
+		nnue.addPiece(Rook, final_square, player, opponent);
+
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_pawn[start_square];
 			hash ^= zobrist_keys.white_rook[final_square];
@@ -311,6 +344,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.addQueen(final_square);
 		player.num_pawns--;
 		player.num_queens++;
+
+		nnue.removePiece(Pawn, start_square, player, opponent);
+		nnue.addPiece(Queen, final_square, player, opponent);
 
 		if (player.is_white) {
 			hash ^= zobrist_keys.white_pawn[start_square];
@@ -332,11 +368,13 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 	if (intersection) {
 		opponent.bitboards.friendly_pieces ^= intersection;
 
-		// See what piece was captured and update piece count and hash
+		// See what piece was captured and update piece count, hash and NNUE
 		if (opponent.bitboards.pawns & intersection) {
 			opponent.bitboards.pawns ^= intersection;
 			opponent.num_pawns--;
 			capture_type = pawn_capture;
+
+			nnue.removePiece(Pawn, final_square, opponent, player);
 
 			if (opponent.is_white) hash ^= zobrist_keys.white_pawn[final_square];
 			else hash ^= zobrist_keys.black_pawn[final_square];
@@ -346,6 +384,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 			opponent.num_knights--;
 			capture_type = knight_capture;
 
+			nnue.removePiece(Knight, final_square, opponent, player);
+
 			if (opponent.is_white) hash ^= zobrist_keys.white_knight[final_square];
 			else hash ^= zobrist_keys.black_knight[final_square];
 		}
@@ -354,6 +394,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 			opponent.num_bishops--;
 			capture_type = bishop_capture;
 
+			nnue.removePiece(Bishop, final_square, opponent, player);
+
 			if (opponent.is_white) hash ^= zobrist_keys.white_bishop[final_square];
 			else hash ^= zobrist_keys.black_bishop[final_square];
 		}
@@ -361,6 +403,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 			opponent.bitboards.rooks ^= intersection;
 			opponent.num_rooks--;
 			capture_type = rook_capture;
+
+			nnue.removePiece(Rook, final_square, opponent, player);
 
 			if (opponent.is_white) hash ^= zobrist_keys.white_rook[final_square];
 			else hash ^= zobrist_keys.black_rook[final_square];
@@ -384,6 +428,8 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 			opponent.num_queens--;
 			capture_type = queen_capture;
 
+			nnue.removePiece(Queen, final_square, opponent, player);
+
 			if (opponent.is_white) hash ^= zobrist_keys.white_queen[final_square];
 			else hash ^= zobrist_keys.black_queen[final_square];
 		}
@@ -405,8 +451,17 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 
 	// Flip turn to move
 	hash ^= zobrist_keys.is_black_to_move;
+	nnue.flipSides();
 
-	return { player_could_castle_king_side, player_could_castle_queen_side, opponent_could_castle_king_side, opponent_could_castle_queen_side, opponent_en_passant_target, capture_type, hash };
+	return { 
+		player_could_castle_king_side, 
+		player_could_castle_queen_side, 
+		opponent_could_castle_king_side, 
+		opponent_could_castle_queen_side, 
+		opponent_en_passant_target, 
+		capture_type, 
+		hash 
+	};
 }
 
 void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info) {
@@ -429,39 +484,60 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 	case pawn_move:
 		player.bitboards.removePawn(final_square);
 		player.bitboards.addPawn(start_square);
+
+		nnue.movePiece(Pawn, final_square, start_square, player, opponent);
+
 		break;
 
 	case pawn_move_two_squares:
 		player.bitboards.removePawn(final_square);
 		player.bitboards.addPawn(start_square);
+
+		nnue.movePiece(Pawn, final_square, start_square, player, opponent);
+
 		player.locations.en_passant_target = 0;
+
 		break;
 
 	case knight_move:
 		player.bitboards.removeKnight(final_square);
 		player.bitboards.addKnight(start_square);
+
+		nnue.movePiece(Knight, final_square, start_square, player, opponent);
+
 		break;
 
 	case bishop_move:
 		player.bitboards.removeBishop(final_square);
 		player.bitboards.addBishop(start_square);
+
+		nnue.movePiece(Bishop, final_square, start_square, player, opponent);
+
 		break;
 
 	case rook_move:
 		player.bitboards.removeRook(final_square);
 		player.bitboards.addRook(start_square);
 
+		nnue.movePiece(Rook, final_square, start_square, player, opponent);
+
 		break;
 
 	case queen_move:
 		player.bitboards.removeQueen(final_square);
 		player.bitboards.addQueen(start_square);
+
+		nnue.movePiece(Queen, final_square, start_square, player, opponent);
+
 		break;
 
 	case king_move:
 		player.bitboards.removeKing(final_square);
 		player.bitboards.addKing(start_square);
 		player.locations.moveKing(start_square);
+
+		nnue.setPosition(player, opponent);
+
 		break;
 
 	case castle_king_side:
@@ -473,6 +549,8 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		player.bitboards.removeRook(final_square - 1);
 		player.bitboards.addRook(initial_square_rook_king_side);
 
+		nnue.setPosition(player, opponent);
+
 		break;
 
 	case castle_queen_side:
@@ -483,6 +561,8 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		// Move queen side rook
 		player.bitboards.removeRook(final_square + 1);
 		player.bitboards.addRook(initial_square_rook_queen_side);
+
+		nnue.setPosition(player, opponent);
 
 		break;
 
@@ -496,6 +576,9 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		opponent.bitboards.addPawn(location_en_passant_pawn);
 		opponent.num_pawns++;
 
+		nnue.movePiece(Pawn, final_square, start_square, player, opponent);
+		nnue.addPiece(Pawn, location_en_passant_pawn, opponent, player);
+
 		break;
 
 	case promotion_knight:
@@ -503,6 +586,10 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		player.bitboards.addPawn(start_square);
 		player.num_pawns++;
 		player.num_knights--;
+
+		nnue.removePiece(Knight, final_square, player, opponent);
+		nnue.addPiece(Pawn, start_square, player, opponent);
+
 		break;
 
 	case promotion_bishop:
@@ -510,6 +597,10 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		player.bitboards.addPawn(start_square);
 		player.num_pawns++;
 		player.num_bishops--;
+
+		nnue.removePiece(Bishop, final_square, player, opponent);
+		nnue.addPiece(Pawn, start_square, player, opponent);
+
 		break;
 
 	case promotion_rook:
@@ -517,6 +608,10 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		player.bitboards.addPawn(start_square);
 		player.num_pawns++;
 		player.num_rooks--;
+
+		nnue.removePiece(Rook, final_square, player, opponent);
+		nnue.addPiece(Pawn, start_square, player, opponent);
+
 		break;
 
 	case promotion_queen:
@@ -524,6 +619,10 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		player.bitboards.addPawn(start_square);
 		player.num_pawns++;
 		player.num_queens--;
+
+		nnue.removePiece(Queen, final_square, player, opponent);
+		nnue.addPiece(Pawn, start_square, player, opponent);
+
 		break;
 
 	default: // Null Move
@@ -539,26 +638,31 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 	case pawn_capture:
 		opponent.bitboards.addPawn(final_square);
 		opponent.num_pawns++;
+		nnue.addPiece(Pawn, final_square, opponent, player);
 		break;
 
 	case knight_capture:
 		opponent.bitboards.addKnight(final_square);
 		opponent.num_knights++;
+		nnue.addPiece(Knight, final_square, opponent, player);
 		break;
 
 	case bishop_capture:
 		opponent.bitboards.addBishop(final_square);
 		opponent.num_bishops++;
+		nnue.addPiece(Bishop, final_square, opponent, player);
 		break;
 
 	case rook_capture:
 		opponent.bitboards.addRook(final_square);
 		opponent.num_rooks++;
+		nnue.addPiece(Rook, final_square, opponent, player);
 		break;
 
 	case queen_capture:
 		opponent.bitboards.addQueen(final_square);
 		opponent.num_queens++;
+		nnue.addPiece(Queen, final_square, opponent, player);
 		break;
 
 	default:
@@ -566,6 +670,8 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 	}
 
 	opponent.bitboards.all_pieces = player.bitboards.all_pieces;
+
+	nnue.flipSides();
 
 	// Reset player's pins, since player is next to play
 	player.move_id++;
