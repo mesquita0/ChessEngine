@@ -21,8 +21,15 @@ NUM_FILES = 50
 DATA_ELEMENT_SIZE = 61 * 4
 BATCH_SIZE_VALIDATION = 100_000
 
-MAX_WEIGHT = 2
-scalling_quant = 127 / MAX_WEIGHT
+SCALING_QUANT_ACC = 127
+SCALING_QUANT_OUTPUT = 150
+SCALING_QUANT_WEIGHTS = 64 # needs to be a power of two
+
+MIN_WEIGHT_LIN_L = -128 / SCALING_QUANT_WEIGHTS
+MAX_WEIGHT_LIN_L =  127 / SCALING_QUANT_WEIGHTS
+
+MIN_WEIGHT_OUT_L = -128 * SCALING_QUANT_ACC / (SCALING_QUANT_WEIGHTS * SCALING_QUANT_OUTPUT)
+MAX_WEIGHT_OUT_L =  127 * SCALING_QUANT_ACC / (SCALING_QUANT_WEIGHTS * SCALING_QUANT_OUTPUT)
 
 USE_SIGMOID_ACTIVATION = False
 
@@ -34,14 +41,17 @@ def activation_function(x):
     return tf.math.minimum(tf.maximum(x, 0), 1) # ClippedReLu
 
 
-max_error = 100
-scalling = 1.0/128
+MAX_ERROR = 100
+SCALING_SIGMOID = 1.0/120
 def loss_function(y_true, y_pred):
-    wdl_eval_true = tf.sigmoid(tf.multiply(tf.cast(y_true, tf.float32), scalling))
-    wdl_eval_pred = tf.sigmoid(tf.multiply(tf.multiply(tf.cast(y_pred, tf.float32), scalling_quant), scalling))
+    wdl_eval_true = tf.sigmoid(tf.multiply(tf.cast(y_true, tf.float32), SCALING_SIGMOID))
+
+    # (y_pred * scaling_output) * scaling_sigmoid
+    wdl_eval_pred = tf.sigmoid(tf.multiply(tf.multiply(tf.cast(y_pred, tf.float32), SCALING_QUANT_OUTPUT), SCALING_SIGMOID))
+
     loss_eval = tf.math.pow(tf.subtract(wdl_eval_pred, wdl_eval_true), tf.constant([2], dtype=tf.float32))
 
-    return tf.multiply(loss_eval, max_error)
+    return tf.multiply(loss_eval, MAX_ERROR)
 
 
 def main():
@@ -87,19 +97,19 @@ def get_model():
     hidden2 = Dense(
         32, 
         activation=activation_function, 
-        kernel_constraint=Between(-MAX_WEIGHT, MAX_WEIGHT)
+        kernel_constraint=Between(MIN_WEIGHT_LIN_L, MAX_WEIGHT_LIN_L)
     )(dropout1)
     dropout2 = Dropout(0.1)(hidden2)
 
     hidden3 = Dense(
         32, 
         activation=activation_function, 
-        kernel_constraint=Between(-MAX_WEIGHT, MAX_WEIGHT)
+        kernel_constraint=Between(MIN_WEIGHT_LIN_L, MAX_WEIGHT_LIN_L)
     )(dropout2)
     
     output = Dense(
         1, 
-        kernel_constraint=Between(-MAX_WEIGHT, MAX_WEIGHT)
+        kernel_constraint=Between(MIN_WEIGHT_OUT_L, MAX_WEIGHT_OUT_L)
     )(hidden3)
 
     model = Model(inputs=[input_sm, input_snm], outputs=output)

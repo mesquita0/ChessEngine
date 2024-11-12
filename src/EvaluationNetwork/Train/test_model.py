@@ -25,9 +25,9 @@ def main():
     
     prediction = loaded_model1.predict([*inp])
     print("No Dropout model evaluation: ")
-    print(prediction / scalling_quant)
+    print(prediction * SCALING_QUANT_OUTPUT)
     print(position['evaluation'])
-    print(loss_function(position['evaluation'], prediction / scalling_quant).numpy())
+    print(loss_function(position['evaluation'], prediction * SCALING_QUANT_OUTPUT).numpy())
     
     prediction = loaded_model2.predict([*inp])
     print("CReLU model evaluation: ")
