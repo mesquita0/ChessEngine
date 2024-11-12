@@ -23,7 +23,8 @@ NNUE::NNUE() {
 int NNUE::evaluate() {
 
 	// Quantitize accumulator
-	crelu(accumulator.arr, accumulator.quant_arr, 512);
+	crelu(accumulator.side_to_move, accumulator.quant_arr, 256);
+	crelu(accumulator.side_not_to_move, accumulator.quant_arr + 256, 256);
 
 	// First hidden layer
 	hidden_layer1.processLinearLayer(accumulator.quant_arr, hidden_neuros1);

@@ -478,6 +478,8 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 	opponent.can_castle_king_side = move_info.opponent_could_castle_king_side;
 	opponent.can_castle_queen_side = move_info.opponent_could_castle_queen_side;
 
+	nnue.flipSides();
+
 	// Revert piece moved to start square
 	location location_en_passant_pawn;
 	switch (flag) {
@@ -670,8 +672,6 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 	}
 
 	opponent.bitboards.all_pieces = player.bitboards.all_pieces;
-
-	nnue.flipSides();
 
 	// Reset player's pins, since player is next to play
 	player.move_id++;

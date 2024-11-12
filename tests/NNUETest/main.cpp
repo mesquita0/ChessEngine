@@ -24,7 +24,7 @@ int main() {
 		MoveInfo mv_inf = makeMove(move, position.player, position.opponent, 0);
 
 		int ev = nnue.evaluate();
-		nnue.setPosition(position.player, position.opponent);
+		nnue.setPosition(position.opponent, position.player);
 		int expected_ev = nnue.evaluate();
 
 		if (ev != expected_ev) 

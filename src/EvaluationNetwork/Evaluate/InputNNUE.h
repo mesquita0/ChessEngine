@@ -30,7 +30,7 @@
 */
 
 struct NNUEIndex {
-	int index_sm, index_snm;
+	int index_white_king, index_black_king;
 };
 
 inline int flip_square(int square) {
