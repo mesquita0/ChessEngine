@@ -74,9 +74,9 @@ int main() {
 		std::vector<NNUEIndex> indexes = getIndexesNNUE(position.player, position.opponent);
 
 		int i = 0;
-		for (auto& [loc_sm, loc_snm] : indexes) {
-			locations_1s_sm[i] = loc_sm;
-			locations_1s_snm[i] = loc_snm;
+		for (auto& [loc_wk, loc_bk] : indexes) {
+			locations_1s_sm[i]  = position.player.is_white ? loc_wk : loc_bk;
+			locations_1s_snm[i] = position.player.is_white ? loc_bk : loc_wk;
 			i++;
 		}
 
@@ -123,10 +123,10 @@ inline static double sigmoid(double x) {
 
 inline double loss(int y_pred, int y_true) {
 	constexpr double max_loss = 100;
-	constexpr double scalling = 1.0/120;
+	constexpr double scaling = 1.0/256;
 
-	double wdl_eval_true = sigmoid(y_true * scalling);
-	double wdl_eval_pred = sigmoid(y_pred * scalling);
+	double wdl_eval_true = sigmoid(y_true * scaling);
+	double wdl_eval_pred = sigmoid(y_pred * scaling);
 	double loss_eval = pow((wdl_eval_pred - wdl_eval_true), 2);
 
 	return loss_eval * max_loss;

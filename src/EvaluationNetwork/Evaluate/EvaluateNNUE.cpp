@@ -7,8 +7,6 @@
 #include <cstdint>
 #include <filesystem>
 
-constexpr double scale = 128;
-
 NNUE::NNUE() {
 	std::filesystem::path weights_dir = std::filesystem::path(__FILE__).parent_path().parent_path() / "Weights";
 
@@ -37,5 +35,5 @@ int NNUE::evaluate() {
 	// Output layer
 	hidden_layer3.processLinearLayer(quant_hidden_neuros2, &output_neuron);
 
-	return output_neuron / scale;
+	return output_neuron;
 }

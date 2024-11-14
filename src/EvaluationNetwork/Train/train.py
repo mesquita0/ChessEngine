@@ -42,7 +42,7 @@ def activation_function(x):
 
 
 MAX_ERROR = 100
-SCALING_SIGMOID = 1.0/120
+SCALING_SIGMOID = 1.0/256
 def loss_function(y_true, y_pred):
     wdl_eval_true = tf.sigmoid(tf.multiply(tf.cast(y_true, tf.float32), SCALING_SIGMOID))
 
