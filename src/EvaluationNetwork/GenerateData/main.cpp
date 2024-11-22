@@ -35,14 +35,14 @@ int main() {
 		return 9;
 	}
 
-	std::string file_path_input = "F:\\ChessDataSet\\Raw data\\lichess_db_Fen_Eval.csv";
+	std::string file_path_input = "F:\\ChessDataSet\\Raw data\\lichess_db_eval.csv";
 	std::string file_path_output = "F:\\ChessDataSet\\lichess_db_all_data.bin";
 
 	std::ifstream fin;
 	std::ofstream fout;
 	fin.open(file_path_input);
 	if (write_to_file) fout.open(file_path_output, std::ios_base::binary);
-	std::string line, fen, eval;
+	std::string line, fen, eval, best_move;
 
 	std::getline(fin, line); // Ignore first line of csv
 	double error = 0;
@@ -52,15 +52,20 @@ int main() {
 	while (std::getline(fin, line)) {
 		std::stringstream s(line);
 
-		std::getline(s, fen, ',');
-		std::getline(s, eval);
-		
+		std::getline(s, fen,  ',');
+		std::getline(s, eval, ',');
+		std::getline(s, best_move);
+
 		std::array<uint32_t, 30> locations_1s_sm = {};
 		std::array<uint32_t, 30> locations_1s_snm = {};
 		Position position = FENToPosition(fen, calculate_loss, calculate_loss);
-		uint64_t all_pieces = position.player.bitboards.all_pieces;
 
-		if (std::popcount(all_pieces) > 32) continue;
+		if (std::popcount(position.player.bitboards.all_pieces) > 32) continue;
+
+		// Do not store positions if their best move is a capture, since we are only interested in evaluating quiet positions
+		location final_square = notationSquareToLocation(best_move.substr(2, 2));
+		if ((1LL << final_square) & position.opponent.bitboards.friendly_pieces) 
+			continue;
 
 		// Make evaluation relative to side to move
 		int32_t evaluation = std::stoi(eval);
@@ -110,6 +115,8 @@ int main() {
 		std::cout << "Error evaluation function: " << (error / n_positions) << '\n'
 				  << "Error nnue evaluation:     " << (error_nnue / n_positions) << '\n';
 	}
+
+	std::cout << "Number of quiet positions: " << n_positions << '\n';
 
 	fin.close();
 	fout.close();
