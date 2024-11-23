@@ -258,7 +258,6 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 
 		// Remove pawn target of en passant
 		location_en_passant_pawn = player.is_white ? (final_square - 8) : (final_square + 8);
-		player.bitboards.all_pieces ^= (1LL << location_en_passant_pawn);
 		opponent.bitboards.removePawn(location_en_passant_pawn);
 		opponent.num_pawns--;
 
@@ -435,6 +434,7 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		}
 	}
 
+	player.bitboards.all_pieces = player.bitboards.friendly_pieces | opponent.bitboards.friendly_pieces;
 	opponent.bitboards.all_pieces = player.bitboards.all_pieces;
 
 	// Update attacks and squares to uncheck bitboards
@@ -574,7 +574,6 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 
 		// Add back pawn target of en passant
 		location_en_passant_pawn = player.is_white ? (final_square - 8) : (final_square + 8);
-		player.bitboards.all_pieces |= (1LL << location_en_passant_pawn);
 		opponent.bitboards.addPawn(location_en_passant_pawn);
 		opponent.num_pawns++;
 
@@ -633,8 +632,6 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 
 	// Captures
 	// Add back piece that was captured and update piece count
-	if (capture_type != no_capture) player.bitboards.all_pieces |= (1LL << final_square);
-
 	switch (capture_type)
 	{
 	case pawn_capture:
@@ -671,6 +668,7 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		break;
 	}
 
+	player.bitboards.all_pieces = player.bitboards.friendly_pieces | opponent.bitboards.friendly_pieces;
 	opponent.bitboards.all_pieces = player.bitboards.all_pieces;
 
 	// Reset player's pins, since player is next to play

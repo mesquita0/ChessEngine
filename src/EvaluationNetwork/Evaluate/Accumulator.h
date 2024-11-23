@@ -13,7 +13,6 @@ private:
     int16_t*    bias;
     int16_t*    weights;
     int16_t 	arr[num_outputs] = {};
-    int16_t		material_rw      = 0;
 
 public:
     int8_t 		quant_arr[num_outputs]  = {};
