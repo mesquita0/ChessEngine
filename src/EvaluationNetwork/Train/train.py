@@ -31,27 +31,34 @@ MAX_WEIGHT_LIN_L =  127 / SCALING_QUANT_WEIGHTS
 MIN_WEIGHT_OUT_L = -128 * SCALING_QUANT_ACC / (SCALING_QUANT_WEIGHTS * SCALING_QUANT_OUTPUT)
 MAX_WEIGHT_OUT_L =  127 * SCALING_QUANT_ACC / (SCALING_QUANT_WEIGHTS * SCALING_QUANT_OUTPUT)
 
-USE_SIGMOID_ACTIVATION = False
-
 
 def activation_function(x): 
-    if (USE_SIGMOID_ACTIVATION):
-        return tf.sigmoid(tf.multiply(x, tf.constant([4], dtype=tf.float32))) # sigmoid(4x)
+    # sigmoid(4x)
+    #return tf.sigmoid(tf.multiply(x, tf.constant([4], dtype=tf.float32))) 
     
-    return tf.math.minimum(tf.maximum(x, 0), 1) # ClippedReLu
+    # ClippedReLu
+    return tf.math.minimum(tf.maximum(x, 0), 1) 
 
 
-MAX_ERROR = 100
-SCALING_SIGMOID = 1.0/120
+SCALING_SIGMOID = 1.0/410
 def loss_function(y_true, y_pred):
-    wdl_eval_true = tf.sigmoid(tf.multiply(tf.cast(y_true, tf.float32), SCALING_SIGMOID))
+    y_true = tf.cast(y_true, tf.float32)
+    y_pred *= SCALING_QUANT_OUTPUT
 
-    # (y_pred * scaling_output) * scaling_sigmoid
-    wdl_eval_pred = tf.sigmoid(tf.multiply(tf.multiply(tf.cast(y_pred, tf.float32), SCALING_QUANT_OUTPUT), SCALING_SIGMOID))
+    wdl_eval_true = tf.sigmoid(y_true * SCALING_SIGMOID)
+    wdl_eval_pred = tf.sigmoid(y_pred * SCALING_SIGMOID)
 
-    loss_eval = tf.math.pow(tf.subtract(wdl_eval_pred, wdl_eval_true), tf.constant([2], dtype=tf.float32))
+    loss_eval = tf.math.pow(wdl_eval_pred - wdl_eval_true, 2)
 
-    return tf.multiply(loss_eval, MAX_ERROR)
+    return loss_eval * 100
+
+
+def mean_absolute_error(y_true, y_pred):
+    return tf.abs(tf.cast(y_true, tf.float32) - y_pred * SCALING_QUANT_OUTPUT)
+
+
+def mean_squared_error(y_true, y_pred):
+    return tf.pow(tf.cast(y_true, tf.float32) - y_pred * SCALING_QUANT_OUTPUT, 2)
 
 
 def main():
@@ -69,7 +76,7 @@ def main():
     tensorboard_callback = tf.keras.callbacks.TensorBoard(histogram_freq=1)
     early_stopping_callback = tf.keras.callbacks.EarlyStopping(patience=2)
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-        "Model-{epoch:02d}-{val_loss:0.2f}", 
+        "Model-{epoch:02d}-{val_loss:0.4f}", 
         monitor="val_loss", mode="min", 
         save_best_only=True
     )
@@ -87,12 +94,13 @@ def main():
 def get_model():
     input_sm = Input(shape=(NUM_NEURONS_INPUT_LAYER_PER_SIDE,), sparse=True, name="side_to_move")
     input_snm = Input(shape=(NUM_NEURONS_INPUT_LAYER_PER_SIDE,), sparse=True, name="side_not_to_move")
+
     input_process_layer = Dense(256, activation=activation_function)
     input_process_layer_side_move = input_process_layer(input_sm)
     input_process_layer_side_not_move = input_process_layer(input_snm)
 
     hidden1 = concatenate([input_process_layer_side_move, input_process_layer_side_not_move])
-    dropout1 = Dropout(0.2)(hidden1)
+    dropout1 = Dropout(0.3)(hidden1)
 
     hidden2 = Dense(
         32, 
@@ -116,7 +124,7 @@ def get_model():
     model.compile(
         optimizer="adam",
         loss=loss_function,
-        metrics=["mean_absolute_error", "mean_squared_error"]
+        metrics=[mean_absolute_error, mean_squared_error]
     )
 
     return model
@@ -134,7 +142,7 @@ def get_data_generators(path_data_directory, training_split, validation_split, t
     training_data = tf.data.FixedLengthRecordDataset(
         filenames=[f"{path_data_directory}data_batch_{i}.bin" for i in training_indices],
         record_bytes=DATA_ELEMENT_SIZE
-    ).map(map_func, num_parallel_calls=NUM_THREADS).batch(BATCH_SIZE).cache("./cache/training").shuffle(1000).repeat(EPOCHS).prefetch(tf.data.AUTOTUNE)
+    ).map(map_func, num_parallel_calls=NUM_THREADS).batch(BATCH_SIZE).snapshot("./cache/training", compression=None).shuffle(1000).repeat(EPOCHS).prefetch(tf.data.AUTOTUNE)
     
     validation_data = tf.data.FixedLengthRecordDataset(
         filenames=[f"{path_data_directory}data_batch_{i}.bin" for i in validation_indices],
