@@ -19,6 +19,7 @@ NNUE::NNUE() {
 }
 
 int NNUE::evaluate() {
+	accumulator.refresh();
 
 	// Quantitize accumulator
 	crelu(accumulator.side_to_move, accumulator.quant_arr, 256);

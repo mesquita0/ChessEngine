@@ -151,6 +151,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.addKing(final_square);
 		player.locations.moveKing(final_square);
 
+		player.bitboards.all_pieces = player.bitboards.friendly_pieces | opponent.bitboards.friendly_pieces;
+		opponent.bitboards.all_pieces = player.bitboards.all_pieces;
+		
 		nnue.setPosition(player, opponent);
 
 		if (player.is_white) {
@@ -196,6 +199,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.removeRook(initial_square_rook_king_side);
 		player.bitboards.addRook(final_square - 1);
 
+		player.bitboards.all_pieces = player.bitboards.friendly_pieces | opponent.bitboards.friendly_pieces;
+		opponent.bitboards.all_pieces = player.bitboards.all_pieces;
+
 		nnue.setPosition(player, opponent);
 
 		// Update hash
@@ -234,6 +240,9 @@ MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, u
 		player.bitboards.removeRook(initial_square_rook_queen_side);
 		player.bitboards.addRook(final_square + 1);
 
+		player.bitboards.all_pieces = player.bitboards.friendly_pieces | opponent.bitboards.friendly_pieces;
+		opponent.bitboards.all_pieces = player.bitboards.all_pieces;
+		
 		nnue.setPosition(player, opponent);
 
 		// Update hash
@@ -538,6 +547,9 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		player.bitboards.addKing(start_square);
 		player.locations.moveKing(start_square);
 
+		player.bitboards.all_pieces = player.bitboards.friendly_pieces | opponent.bitboards.friendly_pieces;
+		opponent.bitboards.all_pieces = player.bitboards.all_pieces;
+
 		nnue.setPosition(player, opponent);
 
 		break;
@@ -551,6 +563,9 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		player.bitboards.removeRook(final_square - 1);
 		player.bitboards.addRook(initial_square_rook_king_side);
 
+		player.bitboards.all_pieces = player.bitboards.friendly_pieces | opponent.bitboards.friendly_pieces;
+		opponent.bitboards.all_pieces = player.bitboards.all_pieces;
+
 		nnue.setPosition(player, opponent);
 
 		break;
@@ -563,6 +578,9 @@ void unmakeMove(const unsigned short move, Player& player, Player& opponent, con
 		// Move queen side rook
 		player.bitboards.removeRook(final_square + 1);
 		player.bitboards.addRook(initial_square_rook_queen_side);
+
+		player.bitboards.all_pieces = player.bitboards.friendly_pieces | opponent.bitboards.friendly_pieces;
+		opponent.bitboards.all_pieces = player.bitboards.all_pieces;
 
 		nnue.setPosition(player, opponent);
 
