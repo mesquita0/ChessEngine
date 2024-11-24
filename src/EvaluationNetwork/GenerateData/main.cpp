@@ -130,7 +130,7 @@ inline static double sigmoid(double x) {
 
 inline double loss(int y_pred, int y_true) {
 	constexpr double max_loss = 100;
-	constexpr double scaling = 1.0/256;
+	constexpr double scaling = 1.0/410;
 
 	double wdl_eval_true = sigmoid(y_true * scaling);
 	double wdl_eval_pred = sigmoid(y_pred * scaling);
