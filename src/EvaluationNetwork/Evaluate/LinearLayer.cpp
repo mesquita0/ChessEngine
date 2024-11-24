@@ -4,6 +4,13 @@
 #include <cstdint>
 #include <immintrin.h>
 #include <string>
+#include <bit>
+
+constexpr uint32_t scaling_weights = 64; // same as in Train/train.py
+static_assert((scaling_weights & (scaling_weights - 1)) == 0, "scaling_weights must be a power of two.");
+
+constexpr int log_scaling_weights = std::countr_zero(scaling_weights); // log2(scaling_weights)
+
 
 LinearLayer::LinearLayer(int num_inputs, int num_outputs) {
 	this->num_inputs = num_inputs;
@@ -52,7 +59,7 @@ void LinearLayer::processLinearLayer(int8_t* const input, int32_t* output) const
 
 		// Add them and the bias, then store the result in the output
 		const __m128i out = _mm_add_epi32(result_low, result_high);
-		output[0] = _mm_extract_epi32(out, 0) + bias[0];
+		output[0] = (_mm_extract_epi32(out, 0) + bias[0]) >> log_scaling_weights;
 	}
 	else {
 		/*
@@ -116,8 +123,9 @@ void LinearLayer::processLinearLayer(int8_t* const input, int32_t* output) const
 			const __m128i tmp_3_high = _mm256_extracti128_si256(tmp_3, 1);
 			__m128i result = _mm_add_epi32(tmp_3_low, tmp_3_high);
 
-			// Add bias to all 4 outputs
+			// Add bias to all 4 outputs and divide by scaling factor
 			result = _mm_add_epi32(result, _mm_load_si128((__m128i*) &bias[i]));
+			result = _mm_srai_epi32(result, log_scaling_weights);
 			
 			_mm_store_si128((__m128i *) &output[i], result);
 		}
