@@ -9,6 +9,7 @@
 #include "Search.h"
 #include "TranspositionTable.h"
 #include "Zobrist.h"
+#include "EvaluationNetwork/Evaluate/EvaluateNNUE.h"
 #include <chrono>
 #include <iostream>
 #include <vector>
@@ -51,6 +52,8 @@ void time_engine(Position& initial_pos, const MagicBitboards& magic_bitboards, c
 	unsigned long long hash = zobrist_keys.positionToHash(initial_pos.player, initial_pos.opponent);
 	HashPositions positions(hash);
 	tt = TranspositionTable(size_TT, initial_pos.player.bitboards.all_pieces);
+
+	nnue.setPosition(initial_pos.player, initial_pos.opponent);
 
 	auto start = std::chrono::high_resolution_clock::now();
 	FindBestMoveItrDeepening(search_depth, initial_pos.player, initial_pos.opponent, positions, initial_pos.half_moves);
