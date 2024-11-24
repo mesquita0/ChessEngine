@@ -111,7 +111,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\Generate Magic Bitboards\x64\Debug;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\x64\Debug;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Evaluate.obj;Position.obj;Locations.obj;Player.obj;BitBoards.obj;GameOutcomes.obj;Moves.obj;MagicBitboards.obj;Perft.obj;MakeMoves.obj;TranspositionTable.obj;Search.obj;Serializer.obj;Zobrist.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Evaluate.obj;GameOutcomes.obj;HistoryTable.obj;MagicBitBoards.obj;MakeMoves.obj;Moves.obj;Perft.obj;Player.obj;Position.obj;Search.obj;TranspositionTable.obj;Zobrist.obj;Serializer.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -130,8 +130,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\x64\Release;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\tests\EngineTest\Engine Versions;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\Generate Magic Bitboards\x64\Release;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Evaluate.obj;Position.obj;Locations.obj;Player.obj;BitBoards.obj;GameOutcomes.obj;Moves.obj;MagicBitboards.obj;Perft.obj;MakeMoves.obj;TranspositionTable.obj;Search.obj;Serializer.obj;Zobrist.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\EvaluationNetwork\x64\Release;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\x64\Release;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\tests\EngineTest\Engine Versions;C:\Users\mesqu\OneDrive\Documentos\Estudo\Projetos\ChessEngine\src\Generate Magic Bitboards\x64\Release;$(VCInstallDir)UnitTest\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Evaluate.obj;GameOutcomes.obj;HistoryTable.obj;MagicBitBoards.obj;MakeMoves.obj;Moves.obj;Perft.obj;Player.obj;Position.obj;Search.obj;TranspositionTable.obj;Zobrist.obj;LinearLayer.obj;ClippedReLU.obj;Accumulator.obj;InputNNUE.obj;EvaluateNNUE.obj;Serializer.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

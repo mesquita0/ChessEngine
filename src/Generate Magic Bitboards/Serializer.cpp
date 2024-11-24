@@ -22,7 +22,6 @@ SquareFile::SquareFile(Square& square) {
 
 SaveFile::SaveFile(std::array<Square, 64>& squares_bishops, std::array<Square, 64>& squares_rooks, std::vector<unsigned long long>& attacks_array) {
 
-	//
 	std::transform(squares_bishops.begin(), squares_bishops.end(), this->squares_bishops.begin(), [](Square& square) {
 		return SquareFile(square);
 		});
@@ -36,28 +35,27 @@ SaveFile::SaveFile(std::array<Square, 64>& squares_bishops, std::array<Square, 6
 bool storeMagics(std::array<Square, 64>& squares_bishops, std::array<Square, 64>& squares_rooks, std::vector<unsigned long long>& attacks_array) {
 	SaveFile save_file(squares_bishops, squares_rooks, attacks_array);
 
-	std::ofstream out_file;
-
 	// Get file's directory
 	std::filesystem::path dir_path = std::filesystem::path(__FILE__).parent_path();
 
-	out_file.open(dir_path / "magic_numbers.bin", std::ios::binary);
+	std::ofstream out_file(dir_path / "magic_numbers.bin", std::ios::binary);
 	if (!out_file) return false;
 
 	cereal::BinaryOutputArchive oarchive(out_file);
 	oarchive(save_file);
+
+	out_file.close();
 
 	return true;
 } 
 
 SaveFile loadMagics() {
 	SaveFile save_file;
-	std::ifstream in_file;
 
 	// Get file's directory
 	std::filesystem::path dir_path = std::filesystem::path(__FILE__).parent_path();
 
-	in_file.open(dir_path / "magic_numbers.bin", std::ios::binary);
+	std::ifstream in_file(dir_path / "magic_numbers.bin", std::ios::binary);
 	if (!in_file.is_open()) return save_file;
 
 	cereal::BinaryInputArchive iarchive(in_file);

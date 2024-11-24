@@ -9,7 +9,7 @@ async def main():
     win_eng2 = 0
     draws = 0
     canceled = 0
-    engine1_v = ".\Versions\ChessEngine"
+    engine1_v = ".\Versions\V9"
     engine2_v = ".\Versions\V8"
     engine1_time = 100
     engine2_time = 100
@@ -108,6 +108,8 @@ async def main():
                 engine2.stdin.write((move + '\n').encode())
                 try:
                     node = node.add_variation(chess.Move.from_uci(move))
+                except UnboundLocalError:
+                    node = game.add_main_variation(chess.Move.from_uci(move))
                 except chess.InvalidMoveError:
                     canceled += 1
                     break
@@ -121,6 +123,8 @@ async def main():
                 engine1.stdin.write((move + '\n').encode())
                 try:
                     node = node.add_variation(chess.Move.from_uci(move))
+                except UnboundLocalError:
+                    node = game.add_main_variation(chess.Move.from_uci(move))
                 except chess.InvalidMoveError:
                     canceled += 1
                     break
@@ -139,9 +143,12 @@ async def main():
 
         # Save games in PGN
         if (save_games and move != ''):
-            with open(f".\\Games\\Game{i}.txt", 'w') as f:
-                f.write(game.__str__())
-            print(f"Game {i} saved at Games\\Game{i}.txt")
+            try:
+                with open(f".\\Games\\Game{i}.txt", 'w') as f: f.write(game.__str__())
+            except AssertionError:
+                print(f"Couldn't save game {i}")
+            else:
+                print(f"Game {i} saved at Games\\Game{i}.txt")
 
     print("Final score:")
     print("Wins Engine 1:", win_eng1)

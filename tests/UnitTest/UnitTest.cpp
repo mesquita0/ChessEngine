@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "CppUnitTest.h"
 #include "Perft.h"
 #include "Player.h"
@@ -6,7 +5,10 @@
 #include "Moves.h"
 #include "MagicBitboards.h"
 #include "Zobrist.h"
+#include "EvaluationNetwork/Evaluate/LinearLayer.h"
 #include <array>
+#include <bit>
+#include <cstdint>
 #include <fstream>
 #include <vector>
 #include <sstream>
@@ -22,11 +24,10 @@ namespace UnitTest
 		
 		TEST_METHOD(FenToMemoryTest) // Test conversion from FEN to position in memory
 		{
-			MagicBitboards magic_bitboards;
 			bool loaded = magic_bitboards.loadMagicBitboards();
 			Assert::IsTrue(loaded);
 
-			auto [pl, op, half_moves, full_moves] = FENToPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", magic_bitboards);
+			auto [pl, op, half_moves, full_moves] = FENToPosition("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 
 			// 0 is white, 1 is black
 			std::vector<std::vector<int>> pawns_positions = { { 48, 49, 50, 51, 52, 53, 54, 55},
@@ -51,34 +52,35 @@ namespace UnitTest
 					(player.bitboards.pawns & player.bitboards.knights & player.bitboards.bishops & player.bitboards.rooks & player.bitboards.queens), 0ull
 				);
 
-				std::vector<std::tuple<std::vector<unsigned char>, unsigned long long, std::vector<int>>> pieces_to_positions;
-				pieces_to_positions.emplace_back(std::vector<unsigned char>(player.locations.pawns.begin(), player.locations.pawns.end()), player.bitboards.pawns, pawns_positions[i]);
-				pieces_to_positions.emplace_back(std::vector<unsigned char>(player.locations.knights.begin(), player.locations.knights.end()), player.bitboards.knights, knights_positions[i]);
-				pieces_to_positions.emplace_back(std::vector<unsigned char>(player.locations.bishops.begin(), player.locations.bishops.end()), player.bitboards.bishops, bishops_positions[i]);
-				pieces_to_positions.emplace_back(std::vector<unsigned char>(player.locations.rooks.begin(), player.locations.rooks.end()), player.bitboards.rooks, rooks_positions[i]);
-				pieces_to_positions.emplace_back(std::vector<unsigned char>(player.locations.queens.begin(), player.locations.queens.end()), player.bitboards.queens, queens_positions[i]);
+				std::vector<std::tuple<unsigned long long, std::vector<int>>> pieces_to_positions;
+				pieces_to_positions.emplace_back(player.bitboards.pawns, pawns_positions[i]);
+				pieces_to_positions.emplace_back(player.bitboards.knights, knights_positions[i]);
+				pieces_to_positions.emplace_back(player.bitboards.bishops, bishops_positions[i]);
+				pieces_to_positions.emplace_back(player.bitboards.rooks, rooks_positions[i]);
+				pieces_to_positions.emplace_back(player.bitboards.queens, queens_positions[i]);
 
 				unsigned char mask = 0x3f;
-				for (auto& [pieces_locations, bitboard, positions] : pieces_to_positions) {
+				for (auto& [bitboard, positions] : pieces_to_positions) {
 
 					// Check if pieces are in the correct positions
-					for (unsigned char location : pieces_locations) {
-						if (location == 0) break;
-						location &= mask;
+					int final_square = 0;
+					while (bitboard != 0 && final_square <= 63) {
+						int squares_to_skip = std::countr_zero(bitboard);
+						final_square += squares_to_skip;
 
 						bool isInVector = false;
 						auto pos = positions.begin();
 						for (auto it = positions.begin(); it != positions.end(); it++) {
-							if (*it == location) {
+							if (*it == final_square) {
 								isInVector = true;
 								pos = it;
 							}
 						}
 						Assert::IsTrue(isInVector);
 						positions.erase(pos);
-						
-						Assert::IsTrue((bitboard & (1LL) << location) != 0);
-						bitboard ^= (1LL) << location;
+
+						bitboard >>= (squares_to_skip + 1);
+						final_square++;
 					}
 
 					// Check if all positions were set
@@ -92,12 +94,6 @@ namespace UnitTest
 		TEST_METHOD(PerftShallowTest) { // Tests perft, but only to depth 4, PerftTest has the full test suite.
 			int start_depth = 1;
 			int max_depth = 4;
-
-			MagicBitboards magic_bitboards;
-			bool loaded = magic_bitboards.loadMagicBitboards();
-			Assert::IsTrue(loaded);
-
-			ZobristKeys zobrist_keys = ZobristKeys();
 
 			// Perft test suit positions from http://www.rocechess.ch/perft.html
 			std::ifstream in_file;
@@ -119,12 +115,44 @@ namespace UnitTest
 					perft.push_back(seg);
 				}
 
-				auto [player, opponent, half_moves, full_moves] = FENToPosition(perft[0], magic_bitboards);
+				auto [player, opponent, half_moves, full_moves] = FENToPosition(perft[0]);
 				Assert::AreNotEqual(full_moves, -1);
 
 				for (int depth = start_depth; depth <= max_depth; depth++) {
+					if (depth + 1 > perft.size()) break;
 					unsigned long long expected_num_nodes = std::stoull(perft[depth].substr(3));
-					Assert::AreEqual(expected_num_nodes, Perft(depth, player, opponent, magic_bitboards, zobrist_keys));
+					unsigned long long num_nodes = Perft(depth, player, opponent);
+					Assert::AreEqual(expected_num_nodes, num_nodes);
+				}
+			}
+		}
+
+		TEST_METHOD(LinearLayerTest) { // Tests the linear layer of the NNUE
+			LinearLayer linear_layers[2] = { LinearLayer(32, 1), LinearLayer(32, 32) };
+
+			alignas(64) int8_t weights[32][32] = {};
+			alignas(64) int32_t bias[32] = {};
+			alignas(64) int8_t inputs[32] = {};
+			alignas(64) int32_t outputs[32] = {};
+
+			for (LinearLayer& ln : linear_layers) {
+				// Generate weights and inputs
+				for (int i = 0; i < ln.num_inputs; i++) {
+					bias[i] = 1;
+					inputs[i] = i;
+					for (int j = 0; j < ln.num_outputs; j++) {
+						weights[j][i] = i;
+					}
+				}
+
+				// Set weights and bias
+				ln.weights = (int8_t*)weights;
+				ln.bias = (int32_t*)bias;
+
+				ln.process_linear_layer(inputs, outputs);
+
+				for (int j = 0; j < ln.num_outputs; j++) {
+					Assert::AreEqual(outputs[j], 10417);
 				}
 			}
 		}
