@@ -14,5 +14,5 @@ public:
 	
 	void processLinearLayer(int8_t* const input, int32_t* output) const;
 
-	void setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights);
+	bool setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights);
 };

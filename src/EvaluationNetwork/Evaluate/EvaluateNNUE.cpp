@@ -10,12 +10,12 @@
 NNUE::NNUE() {
 	std::filesystem::path weights_dir = std::filesystem::path(__FILE__).parent_path().parent_path() / "Weights";
 
-	accumulator.setWeights(weights_dir / "accb.bin", weights_dir / "accw.bin");
-	hidden_layer1.setWeights(weights_dir / "lin1b.bin", weights_dir / "lin1w.bin");
-	hidden_layer2.setWeights(weights_dir / "lin2b.bin", weights_dir / "lin2w.bin");
-	hidden_layer3.setWeights(weights_dir / "lin3b.bin", weights_dir / "lin3w.bin");
+	bool loaded = accumulator.setWeights(weights_dir / "accb.bin", weights_dir / "accw.bin");
+	loaded &= hidden_layer1.setWeights(weights_dir / "lin1b.bin", weights_dir / "lin1w.bin");
+	loaded &= hidden_layer2.setWeights(weights_dir / "lin2b.bin", weights_dir / "lin2w.bin");
+	loaded &= hidden_layer3.setWeights(weights_dir / "lin3b.bin", weights_dir / "lin3w.bin");
 
-	// TODO: Throw error if files not found
+	this->loaded = loaded;
 }
 
 int NNUE::evaluate() {

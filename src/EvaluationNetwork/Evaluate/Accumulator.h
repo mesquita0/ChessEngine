@@ -38,5 +38,5 @@ public:
     void addPiece(PieceType piece_type, location loc, const Player& player, const Player& opponent);
     void removePiece(PieceType piece_type, location loc, const Player& player, const Player& opponent);
 
-    void setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights);
+    bool setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights);
 };

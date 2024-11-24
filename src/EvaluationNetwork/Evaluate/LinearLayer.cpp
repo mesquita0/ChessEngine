@@ -132,7 +132,9 @@ void LinearLayer::processLinearLayer(int8_t* const input, int32_t* output) const
 	}
 }
 
-void LinearLayer::setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights) {
-	loadFromFile(bias, num_outputs, file_biases);
-	loadFromFile(weights, num_inputs * num_outputs, file_weights);
+bool LinearLayer::setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights) {
+	bool loaded_bias    = loadFromFile(bias, num_outputs, file_biases);
+	bool loaded_weights = loadFromFile(weights, num_inputs * num_outputs, file_weights);
+
+	return loaded_bias && loaded_weights;
 }

@@ -17,6 +17,8 @@ class NNUE {
 	int32_t					output_neuron				= 0;
 	LinearLayer				hidden_layer3				= LinearLayer(32, 1);
 
+	bool loaded = false;
+
 public:
 	NNUE();
 
@@ -41,6 +43,8 @@ public:
 	inline void flipSides() {
 		accumulator.flipSides();
 	}
+
+	inline bool is_loaded() const { return loaded; }
 };
 
 inline NNUE nnue = NNUE(); // Global NNUE

@@ -134,7 +134,9 @@ void Accumulator::removePiece(PieceType piece_type, location loc, const Player& 
 	removed_pieces.emplace_back(p_weights_wk, p_weights_bk);
 }
 
-void Accumulator::setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights) {
-	loadFromFile(bias, num_outputs_side, file_biases);
-	loadFromFile(weights, num_inputs * num_outputs_side, file_weights);
+bool Accumulator::setWeights(std::filesystem::path file_biases, std::filesystem::path file_weights) {
+	bool loaded_bias    = loadFromFile(bias, num_outputs_side, file_biases);
+	bool loaded_weights = loadFromFile(weights, num_inputs * num_outputs_side, file_weights);
+
+	return loaded_bias && loaded_weights;
 }
