@@ -35,6 +35,13 @@ int main() {
 		return 9;
 	}
 
+	if (calculate_loss) {
+		if (!nnue.is_loaded()) {
+			std::cout << "Couldn't load weights of NNUE.";
+			return 10;
+		}
+	}
+
 	std::string file_path_input = "F:\\ChessDataSet\\Raw data\\lichess_db_eval.csv";
 	std::string file_path_output = "F:\\ChessDataSet\\lichess_db_all_data.bin";
 

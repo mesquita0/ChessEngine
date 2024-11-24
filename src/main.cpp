@@ -112,11 +112,16 @@ int main(int argc, char* argv[]) {
 		return 9;
 	}
 
+	if (!nnue.is_loaded()) {
+		cout << "Couldn't load weights of NNUE.";
+		return 10;
+	}
+
 	// Set up initial position
 	auto [first_to_move, second_to_move, half_moves, full_moves] = FENToPosition(FEN);
 	if (full_moves == -1) {
 		cout << "Invalid Fen position.\n";
-		return 10;
+		return 11;
 	}
 
 	// Generate Zobrist keys and allocate transposition table

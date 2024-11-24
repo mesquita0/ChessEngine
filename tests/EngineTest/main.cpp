@@ -27,7 +27,12 @@ int main() {
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) {
 		cout << "Couldn't load Magic Bitboards file.";
-		return 2;
+		return 9;
+	}
+
+	if (!nnue.is_loaded()) {
+		cout << "Couldn't load weights of NNUE.";
+		return 10;
 	}
 
 	// Set up initial position
@@ -35,7 +40,7 @@ int main() {
 	Position initial_pos = FENToPosition(FEN);
 	if (initial_pos.full_moves == -1) {
 		cout << "Invalid Fen position.\n";
-		return 1;
+		return 11;
 	}
 
 	zobrist_keys = ZobristKeys();

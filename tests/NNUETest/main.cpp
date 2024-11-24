@@ -11,6 +11,11 @@ int main() {
 	magic_bitboards = MagicBitboards();
 	bool loaded = magic_bitboards.loadMagicBitboards();
 
+	if (!nnue.is_loaded()) {
+		std::cout << "Couldn't load weights of NNUE.";
+		return 10;
+	}
+
 	Position position = FENToPosition("2k1r3/1pp3pp/5pq1/1pP1pn2/1B6/2P2N1P/3Q1PP1/R4RK1 b - - 0 25");
 	nnue.setPosition(position.player, position.opponent);
 	int ev_root_position = nnue.evaluate();
