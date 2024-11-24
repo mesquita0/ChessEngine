@@ -9,6 +9,7 @@
 #include "Player.h"
 #include "TranspositionTable.h"
 #include "Zobrist.h"
+#include "EvaluationNetwork/Evaluate/EvaluateNNUE.h"
 #include <array>
 #include <atomic>
 #include <bit>
@@ -16,7 +17,6 @@
 #include <climits>
 #include <thread>
 #include <vector>
-#include <iostream>
 
 int Search(int depth, int alpha, int beta, Player& player, Player& opponent, HashPositions& positions, 
 		   int half_moves, int num_pieces, std::vector<std::array<unsigned short, 2>>& killer_moves, 
@@ -343,7 +343,7 @@ int quiescenceSearch(int alpha, int beta, Player& player, Player& opponent, int 
 	moves.generateCaptures(player, opponent);
 
 	// Low bound on evaluation, since almost always making a move is better than doing nothing
-	int standing_eval = Evaluate(player, opponent, num_pieces); 
+	int standing_eval = nnue.evaluate();
 	if (standing_eval >= beta) return standing_eval;
 	if (standing_eval > alpha ) alpha = standing_eval;
 
