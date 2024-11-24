@@ -28,13 +28,13 @@ void Accumulator::refresh() {
 		__m256i acc = _mm256_load_si256((__m256i*) & arr[i]);
 
 		for (auto& [p_weights_wk, p_weights_bk] : added_pieces) {
-			const int16_t* p_weights = (i < 256) ? p_weights_wk : p_weights_bk - 256;
+			const int16_t* p_weights = (i < num_outputs_side) ? p_weights_wk : p_weights_bk - num_outputs_side;
 
 			acc = _mm256_add_epi16(acc, _mm256_load_si256((__m256i*) & p_weights[i]));
 		}
 
 		for (auto& [p_weights_wk, p_weights_bk] : removed_pieces) {
-			const int16_t* p_weights = (i < 256) ? p_weights_wk : p_weights_bk - 256;
+			const int16_t* p_weights = (i < num_outputs_side) ? p_weights_wk : p_weights_bk - num_outputs_side;
 
 			acc = _mm256_sub_epi16(acc, _mm256_load_si256((__m256i*) & p_weights[i]));
 		}
@@ -60,9 +60,8 @@ void Accumulator::set(const Player& player, const Player& opponent) {
 			const int16_t* p_weights_snm = weights + index_bk * num_outputs_side;
 
 			const int16_t* p_weights = (i < num_outputs_side) ? p_weights_sm + i : p_weights_snm + i - num_outputs_side;
-			const __m256i loaded_weights = _mm256_load_si256((__m256i*) p_weights);
 
-			acc = _mm256_add_epi16(acc, loaded_weights);
+			acc = _mm256_add_epi16(acc, _mm256_load_si256((__m256i*) p_weights));
 		}
 
 		_mm256_store_si256((__m256i*) & arr[i], acc);
