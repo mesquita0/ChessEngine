@@ -22,7 +22,7 @@ int main() {
 	bool loaded = magic_bitboards.loadMagicBitboards();
 	if (!loaded) return -1;
 
-	// Perft test suit positions from http://www.rocechess.ch/perft.html
+	// Perft test suit positions from http://www.rocechess.ch/perft.html with a few added positions
 	std::ifstream in_file;
 
 	// Get file's directory

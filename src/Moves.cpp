@@ -116,7 +116,7 @@ void Moves::generateMoves(const Player& player, const Player& opponent) {
 				else this->addMove(pawn_move, pawn_location, new_location);
 			}
 
-			// If pawn can capture other piece at its right
+			// If pawn can capture other piece at its left
 			new_location = pawn_location + capture_left;
 			if ((opponent.bitboards.friendly_pieces & (1LL << new_location)) && (file != left_edge) && canMove(is_in_check, new_location, player.bitboards.squares_to_uncheck)) {
 				if (new_location >= 56 || new_location <= 7) {
@@ -147,24 +147,32 @@ void Moves::generateMoves(const Player& player, const Player& opponent) {
 				all_pieces |= (1LL << opponent.locations.en_passant_target);
 				
 				// Check if en passant wont leave king in check
-				unsigned long long rooks_and_queens = opponent.bitboards.rooks | opponent.bitboards.queens;
+				unsigned long long bishops_and_queens = opponent.bitboards.bishops | opponent.bitboards.queens;
+				unsigned long long rooks_and_queens   = opponent.bitboards.rooks   | opponent.bitboards.queens;
+				unsigned long long opponent_pieces    = bishops_and_queens         | rooks_and_queens;
+
 				bool can_en_passant = true;
 				int square = 0;
-				while (rooks_and_queens != 0 && square <= 63) {
-					int squares_to_skip = std::countr_zero(rooks_and_queens);
+				while (opponent_pieces != 0 && square <= 63) {
+					int squares_to_skip = std::countr_zero(opponent_pieces);
 					square += squares_to_skip;
 
-					unsigned long long squares_to_uncheck = squaresToUncheckRook(player.locations.king, square);
-					if (((squares_to_uncheck ^ (1LL << square)) & all_pieces) == 0) {
+					unsigned long long bitboard_square = (1LL << square);
+					unsigned long long squares_to_uncheck = 0;
+
+					if (bitboard_square & bishops_and_queens) squares_to_uncheck |= squaresToUncheckBishop(player.locations.king, square);
+					if (bitboard_square & rooks_and_queens) squares_to_uncheck |= squaresToUncheckRook(player.locations.king, square);
+
+					if (((squares_to_uncheck ^ bitboard_square) & all_pieces) == 0) {
 						can_en_passant = false;
 						break;
 					}
 
-					rooks_and_queens >>= (squares_to_skip + 1);
+					opponent_pieces >>= (squares_to_skip + 1);
 					square++;
 				}
 
-				// Add move if player king is not under attack
+				// Add move if it won't leave the player's king under attack
 				if (can_en_passant) this->addMove(en_passant, pawn_location, opponent.locations.en_passant_target);
 			}
 		}

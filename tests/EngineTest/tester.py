@@ -9,8 +9,8 @@ async def main():
     win_eng2 = 0
     draws = 0
     canceled = 0
-    engine1_v = ".\Versions\V9"
-    engine2_v = ".\Versions\V8"
+    engine1_v = ".\Versions\V10"
+    engine2_v = ".\Versions\V9"
     engine1_time = 100
     engine2_time = 100
     N = 100
