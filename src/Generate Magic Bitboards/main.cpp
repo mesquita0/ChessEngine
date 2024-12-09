@@ -39,7 +39,6 @@ int main() {
 
 	cout << "Maximum number of bits used for rooks: " << (64 - min_num_shifts_rooks) << "\n";
 	cout << "Maximum number of bits used for bishops: " << (64 - min_num_shifts_bishops) << "\n";
-	Square a;
 	array<Square, 64> squares_rooks = {};
 	array<Square, 64> squares_bishops = {};
 	array<vector<int>, 64> indexes_blockers_rooks;

@@ -22,11 +22,11 @@ bool MagicBitboards::loadMagicBitboards() {
 
 	this->sliding_attacks_array = save_file.attacks_array;
 
-	std::transform(save_file.squares_bishops.begin(), save_file.squares_bishops.end(), this->bishops_magic_bitboards.begin(), [&](SquareFile& square) {
+	std::transform(save_file.squares_bishops.begin(), save_file.squares_bishops.end(), this->bishops_magic_bitboards.begin(), [&](Square& square) {
 		return MagicBitboard(square.mask, square.magic.magic_number, 64 - square.magic.bits_used, &this->sliding_attacks_array[square.index_attack_array]);
 	});
 
-	std::transform(save_file.squares_rooks.begin(), save_file.squares_rooks.end(), this->rooks_magic_bitboards.begin(), [&](SquareFile& square) {
+	std::transform(save_file.squares_rooks.begin(), save_file.squares_rooks.end(), this->rooks_magic_bitboards.begin(), [&](Square& square) {
 		return MagicBitboard(square.mask, square.magic.magic_number, 64 - square.magic.bits_used, &this->sliding_attacks_array[square.index_attack_array]);
 	});
 
