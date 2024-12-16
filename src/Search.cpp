@@ -32,12 +32,12 @@ bool deal_repetition(Player& player, Player& opponent, const HashPositions& posi
 std::atomic_bool timed_out = false;
 int search_id = 0; // Only written by main thread, does not need to be atomic
 
-static void stopSearch(int id) {
+void stopSearch(int id) {
 	if (id == search_id) timed_out = true;
 }
 
-SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
-	SearchResult result = { 0, 0, 0 };
+void FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves, SearchResult& result) {
+	result = { 0, 0, 0 };
 
 	// Set timer to search
 	search_id++;
@@ -60,31 +60,33 @@ SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& pl
 	}
 
 	timer.detach();
-
-	return result;
 }
 
 
-SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
-	SearchResult result = { 0, 0, 0 };
+void FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves, SearchResult& result) {
+	result = { 0, 0, 0 };
+
+	search_id++;
 	timed_out = false;
 
 	// Check for hallucinations of the engine if a position has alredy been repeated twice and principal variation leads to draw by repetition
 	repetition(player, opponent, positions);
 
 	for (int i = 1; i <= depth; i++) {
-		result = FindBestMove(i, player, opponent, positions, half_moves);
+		SearchResult r = FindBestMove(i, player, opponent, positions, half_moves);
 		
-		if (result.evaluation == checkmated_eval || result.evaluation == checkmate_eval) break;
+		// Ignore result if search was canceled imediately, without being able to look at any moves
+		if (r.best_move != 0) result = r;
+
+		if (result.evaluation == checkmated_eval || result.evaluation == checkmate_eval || timed_out) break;
 	}
-	
-	return result;
 }
 
 
 SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
 
 	 int num_pieces = std::popcount(player.bitboards.all_pieces);
+	 nnue.setPosition(player, opponent);
 
 	/*
 	UnmakeMove (and Search) won't revert back changes in attacks and squares_to_uncheck bitboards, since they are going

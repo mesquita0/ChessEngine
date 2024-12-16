@@ -13,10 +13,22 @@ struct SearchResult {
 	unsigned short depth;
 };
 
-// Returns the move with the highest evaluation
-SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves);
+void stopSearch(int id);
 
 // Returns the move with the highest evaluation
-SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves);
+void FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves, SearchResult& result);
+inline SearchResult FindBestMoveItrDeepening(std::chrono::milliseconds time, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
+	SearchResult result;
+	FindBestMoveItrDeepening(time, player, opponent, positions, half_moves, result);
+	return result;
+}
+
+// Returns the move with the highest evaluation
+void FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves, SearchResult& result);
+inline SearchResult FindBestMoveItrDeepening(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves) {
+	SearchResult result;
+	FindBestMoveItrDeepening(depth, player, opponent, positions, half_moves, result);
+	return result;
+}
 
 SearchResult FindBestMove(int depth, Player& player, Player& opponent, HashPositions& positions, int half_moves);
