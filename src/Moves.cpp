@@ -4,7 +4,9 @@
 #include "MagicBitboards.h"
 #include "PieceTypes.h"
 #include "Player.h"
+#include "Position.h"
 #include "TranspositionTable.h"
+#include <algorithm>
 #include <array>
 #include <bit>
 #include <climits>
@@ -423,24 +425,6 @@ void Moves::generateCaptures(Player& player, const Player& opponent) {
 
 	if (king_attacks)
 		addMovesFromAttacksBitboard(player.locations.king, false, 0, king_attacks, king_move, this);
-}
-
-unsigned short Moves::isMoveLegal (unsigned short move_flag, location start_square, location final_square) const {
-	unsigned short desired_move = (move_flag | (start_square << 6) | final_square);
-	for (const unsigned short move : *this) {
-		if (desired_move == move) return move;
-	}
-
-	return 0;
-}
-
-unsigned short Moves::isMoveLegal (location start_square, location final_square) const {
-	unsigned short desired_move = (start_square << 6 | final_square);
-	for (const unsigned short move : *this) {
-		if (desired_move == (move & 0xfff)) return move;
-	}
-
-	return 0;
 }
 
 bool Moves::isMoveLegal (unsigned short move) const {
@@ -864,6 +848,54 @@ void setPin(Player& player, const Player& opponent, location piece_location, boo
 		player.pins[index_pinned_piece].squares_to_unpin = squares_to_uncheck;
 		player.pins[index_pinned_piece].id_move_pinned = player.move_id;
 	}
+}
+
+unsigned short Moves::parseMove(std::string& move_str) {
+	unsigned short move = 0;
+
+	if (move_str.length() < 4 || move_str.length() > 5) return move;
+
+	std::transform(move_str.begin(), move_str.end(), move_str.begin(), (int (*)(int))std::tolower);
+
+	unsigned short start_square = notationSquareToLocation(move_str.substr(0, 2));
+	unsigned short final_square = notationSquareToLocation(move_str.substr(2, 2));
+
+	// Moves that are not promotions
+	if (move_str.length() == 4) {
+		unsigned short tmp_move = (start_square << 6) | final_square;
+		if (!isPromotion(tmp_move)) move = tmp_move;
+	}
+
+	// Promotions
+	else if (move_str.length() == 5) {
+		unsigned short promotion_flag = 0;
+
+		switch (move_str[4]) {
+		case 'n':
+			promotion_flag = promotion_knight;
+			break;
+		case 'b':
+			promotion_flag = promotion_bishop;
+			break;
+		case 'r':
+			promotion_flag = promotion_rook;
+			break;
+		case 'q':
+			promotion_flag = promotion_queen;
+			break;
+		default:
+			break;
+		}
+
+		move = promotion_flag | (start_square << 6) | final_square;
+	}
+
+	// Get the move flag if it is valid
+	for (const unsigned short m : *this) {
+		if ((m & 0xfff) == move) return m;
+	}
+
+	return 0;
 }
 
 PieceType getPieceType(unsigned short move) {
