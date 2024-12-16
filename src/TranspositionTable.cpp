@@ -15,13 +15,11 @@ void Bucket::updateSmallestDepth() {
 	}
 }
 
-TranspositionTable::TranspositionTable(size_t size_mb, uint64_t all_pieces) {
+TranspositionTable::TranspositionTable(size_t size_mb) {
 	assert((size_mb & (size_mb - 1)) == 0, "size_mb must be a power of two.");
 	size_t max_entries = size_mb * 1024 * 1024 / sizeof(Bucket);
 	table.resize(max_entries);
 	index_mask = max_entries - 1; // max_entries is a power of two (...0010000...) so it becomes ...0001111...
-
-	num_pieces_root = std::popcount(all_pieces);
 }
 
 void TranspositionTable::store(uint64_t hash, unsigned short best_move, uint8_t depth, nodeFlag node_flag, int16_t eval, uint8_t num_pieces, Entry* pos_entry) {
@@ -93,8 +91,7 @@ Entry* TranspositionTable::get(uint64_t hash, uint32_t num_pieces, const Player&
 	return nullptr;
 }
 
-void TranspositionTable::updateMoveRoot(short capture_flag, short move_flag) {
-	current_generation++; 
-	if (capture_flag != no_capture || move_flag == en_passant) 
-		num_pieces_root--; 
+void TranspositionTable::setRoot(uint64_t all_pieces) {
+	current_generation++;
+	num_pieces_root = std::popcount(all_pieces);
 }

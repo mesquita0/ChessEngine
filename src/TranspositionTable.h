@@ -46,17 +46,16 @@ class TranspositionTable {
 	uint8_t current_generation = 0;
 
 public:
-	// Size in mb, must be a power of two.
-	TranspositionTable(size_t size_mb, uint64_t all_pieces);
+	TranspositionTable(size_t size_mb);
 	TranspositionTable() = default;
+
+	void setRoot(uint64_t all_pieces);
 
 	// pos_entry should be the pointer returned in get, or nullptr if get wasn't used.
 	void store(uint64_t hash, unsigned short best_move, uint8_t depth, nodeFlag node_flag, int16_t eval, uint8_t num_pieces, Entry* pos_entry);
 
 	Entry* get(uint64_t hash, uint32_t num_pieces, const Moves& moves);
 	Entry* get(uint64_t hash, uint32_t num_pieces, const Player& player);
-
-	void updateMoveRoot(short capture_flag, short move_flag);
 };
 
 inline TranspositionTable tt; // Global Transposition Table
