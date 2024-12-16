@@ -143,6 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Evaluate.cpp" />
     <ClCompile Include="GameOutcomes.cpp" />
     <ClCompile Include="HistoryTable.cpp" />
@@ -159,6 +160,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BitBoards.h" />
+    <ClInclude Include="Engine.h" />
     <ClInclude Include="Evaluate.h" />
     <ClInclude Include="GameOutcomes.h" />
     <ClInclude Include="HistoryTable.h" />
