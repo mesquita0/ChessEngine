@@ -23,6 +23,7 @@ TranspositionTable::TranspositionTable(size_t size_mb) {
 }
 
 void TranspositionTable::store(uint64_t hash, unsigned short best_move, uint8_t depth, nodeFlag node_flag, int16_t eval, uint8_t num_pieces, Entry* pos_entry) {
+	last_generation_searched = current_generation;
 
 	// Avoid storing the same position multiple times
 	if (pos_entry && pos_entry->hash == unsigned(hash >> 32)) {
@@ -70,6 +71,7 @@ void TranspositionTable::store(uint64_t hash, unsigned short best_move, uint8_t 
 Entry* TranspositionTable::get(uint64_t hash, uint32_t num_pieces, const Moves& moves) {
 	uint32_t index = hash & index_mask;
 	uint32_t upper_bits_hash = hash >> 32;
+
 	for (Entry& entry : table[index]) {
 		if (entry.hash == upper_bits_hash && entry.num_pieces == num_pieces && moves.isMoveLegal(entry.best_move)) {
 			entry.generation_last_used = current_generation;
@@ -92,6 +94,6 @@ Entry* TranspositionTable::get(uint64_t hash, uint32_t num_pieces, const Player&
 }
 
 void TranspositionTable::setRoot(uint64_t all_pieces) {
-	current_generation++;
+	if (last_generation_searched == current_generation) current_generation++;
 	num_pieces_root = std::popcount(all_pieces);
 }

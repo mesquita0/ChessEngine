@@ -42,8 +42,7 @@ public:
 class TranspositionTable {
 	std::vector<Bucket> table;
 	uint64_t index_mask = 0;
-	uint8_t num_pieces_root = 0;
-	uint8_t current_generation = 0;
+	uint8_t num_pieces_root = 0, current_generation = 0, last_generation_searched = 0;
 
 public:
 	TranspositionTable(size_t size_mb);
