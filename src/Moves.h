@@ -106,3 +106,5 @@ inline bool isCapture(unsigned short move, unsigned long long opponent_pieces) {
 PieceType getPieceType(unsigned short move);
 
 bool isPseudoLegal(unsigned short move, const Player& player);
+
+std::string moveToStr(unsigned short move);

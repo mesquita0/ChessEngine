@@ -64,31 +64,13 @@ void Engine::search() {
 		else
 			FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, position.half_moves, search_result);
 
-		std::cout << "bestmove ";
-
 		unsigned short move = search_result.best_move;
-		std::cout << locationToNotationSquare((move >> 6) & 0b111111);
-		std::cout << locationToNotationSquare(move & 0b111111);
-		if (isPromotion(move)) {
-			unsigned short promotion_flag = getMoveFlag(move);
 
-			switch (promotion_flag) {
-			case promotion_knight:
-				std::cout << 'n';
-				break;
-			case promotion_bishop:
-				std::cout << 'b';
-				break;
-			case promotion_rook:
-				std::cout << 'r';
-				break;
-			case promotion_queen:
-				std::cout << 'q';
-				break;
-			}
-		}
-
-		std::cout << std::endl;
+		MoveInfo move_info = makeMove(move, *player, *opponent, hash);
+		unsigned short ponder = tt.get(move_info.hash, std::popcount(opponent->bitboards.all_pieces), *opponent)->best_move;
+		unmakeMove(move, *player, *opponent, move_info);
+		
+		std::cout << "bestmove " << moveToStr(move) << " ponder " << moveToStr(ponder) << std::endl;
 	});
 }
 

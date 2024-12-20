@@ -957,3 +957,31 @@ bool isPseudoLegal(unsigned short move, const Player& player) {
 
 	return true;
 }
+
+std::string moveToStr(unsigned short move) {
+	std::string move_str = "";
+
+	move_str += locationToNotationSquare((move >> 6) & 0b111111);
+	move_str += locationToNotationSquare(move & 0b111111);
+
+	if (isPromotion(move)) {
+		unsigned short promotion_flag = getMoveFlag(move);
+
+		switch (promotion_flag) {
+		case promotion_knight:
+			move_str += 'n';
+			break;
+		case promotion_bishop:
+			move_str += 'b';
+			break;
+		case promotion_rook:
+			move_str += 'r';
+			break;
+		case promotion_queen:
+			move_str += 'q';
+			break;
+		}
+	}
+
+	return move_str;
+}
