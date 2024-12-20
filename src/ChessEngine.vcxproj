@@ -145,6 +145,7 @@
   <ItemGroup>
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Evaluate.cpp" />
+    <ClCompile Include="GameMode.cpp" />
     <ClCompile Include="GameOutcomes.cpp" />
     <ClCompile Include="HistoryTable.cpp" />
     <ClCompile Include="MagicBitboards.cpp" />
@@ -162,6 +163,7 @@
     <ClInclude Include="BitBoards.h" />
     <ClInclude Include="Engine.h" />
     <ClInclude Include="Evaluate.h" />
+    <ClInclude Include="GameMode.h" />
     <ClInclude Include="GameOutcomes.h" />
     <ClInclude Include="HistoryTable.h" />
     <ClInclude Include="MagicBitboards.h" />
