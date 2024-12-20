@@ -20,7 +20,7 @@ Engine::Engine() {
 	loaded = nnue_loaded && magic_bitboards_loaded;
 }
 
-bool Engine::isReady() const {
+bool Engine::didLoad() const {
 	return loaded;
 }
 
@@ -57,7 +57,13 @@ void Engine::search() {
 
 	search_id++;
 	searcher = std::thread([&]() {
-		FindBestMoveItrDeepening(60, *player, *opponent, hash_positions, position.half_moves, search_result);
+		if (infinite_search)
+			FindBestMoveItrDeepening(9999, *player, *opponent, hash_positions, position.half_moves, search_result);
+		else if (fixed_depth > 0)
+			FindBestMoveItrDeepening(fixed_depth, *player, *opponent, hash_positions, position.half_moves, search_result);
+		else
+			FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, position.half_moves, search_result);
+
 		std::cout << "bestmove ";
 
 		unsigned short move = search_result.best_move;
@@ -93,4 +99,20 @@ void Engine::stop() const {
 SearchResult Engine::waitSearchResult() {
 	searcher.join();
 	return search_result;
+}
+
+GameOutcome Engine::getGameStatus() {
+	return getGameOutcome(*player, *opponent, hash_positions, position.half_moves);
+}
+
+void Engine::setTimeWhite(int time_remaining_white) {
+	if (player->is_white) {
+		setSearchTime(time_remaining_white / 10);
+	}
+}
+
+void Engine::setTimeBlack(int time_remaining_black) {
+	if (!player->is_white) {
+		setSearchTime(time_remaining_black / 10);
+	}
 }
