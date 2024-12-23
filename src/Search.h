@@ -9,8 +9,7 @@
 
 struct SearchResult {
 	int evaluation;
-	unsigned short best_move;
-	unsigned short depth;
+	unsigned short best_move, ponder, depth;
 };
 
 void stopSearch(int id);

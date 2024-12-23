@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
 			engine.stop();
 		}
 
-		else if (command != "quit") {
+		else if (command != "quit" && command != "") {
 			cout << "Unkown command: " << command << std::endl;
 		}
 	}
