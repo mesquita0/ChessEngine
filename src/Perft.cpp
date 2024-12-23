@@ -48,9 +48,9 @@ static unsigned long long Perftr(int depth, Player& player, Player& opponent, Mo
 			are alredy computed.
 		*/
 
-		MoveInfo move_info = makeMove(move, player, opponent, 0);
+		MoveInfo move_info = makeMove(move, player, opponent, 0, false);
 		nodes += Perftr(depth - 1, opponent, player, new_moves);
-		unmakeMove(move, player, opponent, move_info);
+		unmakeMove(move, player, opponent, move_info, false);
 	}
 
 	return nodes;
@@ -67,11 +67,11 @@ unsigned long long PerftDivide(int depth, Player& player, Player& opponent) {
 
 	for (const unsigned short move : moves) {
 		std::cout << locationToNotationSquare((move >> 6) & 0x3f) << locationToNotationSquare(move & 0x3f);
-		MoveInfo move_info = makeMove(move, player, opponent, 0);
+		MoveInfo move_info = makeMove(move, player, opponent, 0, false);
 		unsigned long long nodes_move = Perft(depth - 1, opponent, player);
 		nodes += nodes_move;
 		std::cout << ": " << nodes_move << '\n';
-		unmakeMove(move, player, opponent, move_info);
+		unmakeMove(move, player, opponent, move_info, false);
 	}
 
 	opponent.bitboards.attacks = attacks;

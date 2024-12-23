@@ -1,9 +1,6 @@
 ﻿#include "Perft.h"
-#include "Player.h"
 #include "Position.h"
-#include "Moves.h"
-#include "MagicBitboards.h"
-#include "Zobrist.h"
+#include "Engine.h"
 #include <array>
 #include <chrono>
 #include <fstream>
@@ -19,8 +16,11 @@ int main() {
 	std::chrono::milliseconds total_duration(0);
 	unsigned long long total_positions = 0;
 
-	bool loaded = magic_bitboards.loadMagicBitboards();
-	if (!loaded) return -1;
+	Engine engine = Engine();
+	if (!engine.didLoad()) {
+		std::cout << "Engine could not load properly.\n";
+		return -1;
+	}
 
 	// Perft test suit positions from http://www.rocechess.ch/perft.html with a few added positions
 	std::ifstream in_file;

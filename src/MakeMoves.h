@@ -16,6 +16,6 @@ struct MoveInfo {
 };
 
 // Returns move info to be used in unmakeMove.
-MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash);
+MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash, bool update_nnue=true);
 
-void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info);
+void unmakeMove(const unsigned short move, Player& player, Player& opponent, const MoveInfo& move_info, bool update_nnue=true);

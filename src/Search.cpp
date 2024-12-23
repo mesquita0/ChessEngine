@@ -441,7 +441,7 @@ bool deal_repetition(Player& player, Player& opponent, const HashPositions& posi
     if (!entry) return false;
 
     int eval = entry->eval;
-    MoveInfo mv_inf = makeMove(entry->best_move, player, opponent, hash);
+    MoveInfo mv_inf = makeMove(entry->best_move, player, opponent, hash, false);
     hash = mv_inf.hash;
 
     // Repetition of moves
@@ -453,18 +453,18 @@ bool deal_repetition(Player& player, Player& opponent, const HashPositions& posi
         else entry->node_flag = Exact;
         entry->eval = 0;
         
-        unmakeMove(entry->best_move, player, opponent, mv_inf);
+        unmakeMove(entry->best_move, player, opponent, mv_inf, false);
         return true;
     }
     else if (!positions.contains(hash)) { // Return false if new position is not repeated
-        unmakeMove(entry->best_move, player, opponent, mv_inf);
+        unmakeMove(entry->best_move, player, opponent, mv_inf, false);
         return false;
     }
 
     Entry* new_entry = tt.get(hash, std::popcount(player.bitboards.all_pieces), opponent);
 
     bool result = deal_repetition(opponent, player, positions, hash, repeated_position, new_entry);
-    unmakeMove(entry->best_move, player, opponent, mv_inf);
+    unmakeMove(entry->best_move, player, opponent, mv_inf, false);
 
     // Delete the rest of the PV line from the tt
     if (result)
@@ -479,12 +479,12 @@ unsigned short getPonder(unsigned short best_move, Player& player, Player& oppon
     unsigned long long attacks = opponent.bitboards.attacks;
     unsigned long long squares_to_uncheck = player.bitboards.squares_to_uncheck;
 
-    MoveInfo mv_inf = makeMove(best_move, player, opponent, hash);
+    MoveInfo mv_inf = makeMove(best_move, player, opponent, hash, false);
     
     Entry* entry = tt.get(mv_inf.hash, std::popcount(player.bitboards.all_pieces), opponent);
     ponder = (entry) ? entry->best_move : 0;
 
-    unmakeMove(best_move, player, opponent, mv_inf);
+    unmakeMove(best_move, player, opponent, mv_inf, false);
 
     opponent.bitboards.attacks = attacks;
     player.bitboards.squares_to_uncheck = squares_to_uncheck;
