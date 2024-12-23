@@ -40,8 +40,8 @@ ZobristKeys::ZobristKeys() {
 	black_castle_queen_side = distribution(generator);
 }
 
-void ZobristKeys::setRoot(const Player& player, const Player& opponent) {
-	hash = 0;
+unsigned long long ZobristKeys::positionToHash(const Player& player, const Player& opponent) {
+	unsigned long long hash = 0;
 
 	const Player& white = player.is_white ? player : opponent;
 	const Player& black = player.is_white ? opponent : player;
@@ -70,6 +70,8 @@ void ZobristKeys::setRoot(const Player& player, const Player& opponent) {
 	if (white.can_castle_queen_side) hash ^= white_castle_queen_side;
 	if (black.can_castle_king_side) hash ^= black_castle_king_side;
 	if (black.can_castle_queen_side) hash ^= black_castle_queen_side;
+
+	return hash;
 }
 
 static uint64_t addPiecesToHash(uint64_t hash, uint64_t piece_bitboard, uint64_t* piece_hash) {

@@ -7,8 +7,6 @@ class ZobristKeys {
 	std::array<uint64_t, 776> keys = {};
 
 public:
-	unsigned long long hash = 0;
-
 	uint64_t* white_pawn;
 	uint64_t* white_knight;
 	uint64_t* white_bishop;
@@ -33,7 +31,7 @@ public:
 
 	ZobristKeys();
 
-	void setRoot(const Player& player, const Player& opponent);
+	unsigned long long positionToHash(const Player& player, const Player& opponent);
 };
 
-inline ZobristKeys zobrist_keys; // Global Zobrist Keys
+inline ZobristKeys zobrist_keys = ZobristKeys(); // Global Zobrist Keys

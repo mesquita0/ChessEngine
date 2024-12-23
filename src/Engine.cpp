@@ -12,7 +12,6 @@
 #include <thread>
 
 Engine::Engine() {
-	zobrist_keys = ZobristKeys();
 	tt = TranspositionTable(tt_size_mb);
 	bool nnue_loaded = nnue.is_loaded();
 	bool magic_bitboards_loaded = magic_bitboards.loadMagicBitboards();
@@ -29,8 +28,7 @@ void Engine::setPosition(const Position& position) {
 
 	tt.setRoot(position.player1.bitboards.all_pieces);
 
-	zobrist_keys.setRoot(position.player1, position.player2);
-	hash = zobrist_keys.hash;
+	hash = zobrist_keys.positionToHash(position.player1, position.player2);
 
 	hash_positions = HashPositions(hash);
 
@@ -63,7 +61,7 @@ void Engine::search() {
 			FindBestMoveItrDeepening(fixed_depth, *player, *opponent, hash_positions, position.half_moves, search_result);
 		else
 			FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, position.half_moves, search_result);
-
+		
 		std::cout << "bestmove " << moveToStr(search_result.best_move); 
 		if (search_result.ponder) std::cout << " ponder " << moveToStr(search_result.ponder);
 		std::cout << std::endl;
