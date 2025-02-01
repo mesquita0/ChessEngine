@@ -3,7 +3,7 @@
 #include "Moves.h"
 #include "PieceTypes.h"
 #include "Zobrist.h"
-#include "EvaluationNetwork/Evaluate/EvaluateNNUE.h"
+#include "EvaluateNNUE.h"
 
 MoveInfo makeMove(const unsigned short move, Player& player, Player& opponent, unsigned long long hash, bool update_nnue) {
 	unsigned short flag = getMoveFlag(move);

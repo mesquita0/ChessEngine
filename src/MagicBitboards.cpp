@@ -1,6 +1,6 @@
 #include "MagicBitboards.h"
 #include "Moves.h"
-#include "./Generate Magic Bitboards/Serializer.h"
+#include "Serializer.h"
 #include <algorithm>
 #include <array>
 

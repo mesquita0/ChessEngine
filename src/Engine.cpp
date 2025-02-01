@@ -7,7 +7,7 @@
 #include "Search.h"
 #include "TranspositionTable.h"
 #include "Zobrist.h"
-#include "EvaluationNetwork/Evaluate/EvaluateNNUE.h"
+#include "EvaluateNNUE.h"
 #include <iostream>
 #include <thread>
 

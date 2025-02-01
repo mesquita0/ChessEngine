@@ -40,7 +40,7 @@ ZobristKeys::ZobristKeys() {
 	black_castle_queen_side = distribution(generator);
 }
 
-unsigned long long ZobristKeys::positionToHash(const Player& player, const Player& opponent) {
+unsigned long long ZobristKeys::positionToHash(const Player& player, const Player& opponent) const {
 	unsigned long long hash = 0;
 
 	const Player& white = player.is_white ? player : opponent;
