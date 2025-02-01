@@ -12,6 +12,7 @@ private:
 public:
 	int branch_id = 0, start = 0;
 
+	HashPositions() = default;
 	HashPositions(unsigned long long initial_hash);
 
 	// Updates positions vector and returns new number of half moves

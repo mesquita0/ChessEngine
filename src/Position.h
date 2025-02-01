@@ -4,7 +4,7 @@
 #include <string>
 
 struct Position {
-	Player player, opponent;
+	Player player1 = Player(true), player2 = Player(false);
 	int half_moves, full_moves;
 };
 

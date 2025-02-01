@@ -31,7 +31,7 @@ public:
 
 	ZobristKeys();
 
-	uint64_t positionToHash(const Player& player, const Player& opponent) const;
+	unsigned long long positionToHash(const Player& player, const Player& opponent);
 };
 
 inline ZobristKeys zobrist_keys = ZobristKeys(); // Global Zobrist Keys

@@ -67,28 +67,28 @@ int main() {
 		std::array<uint32_t, 30> locations_1s_snm = {};
 		Position position = FENToPosition(fen, calculate_loss, calculate_loss);
 
-		if (std::popcount(position.player.bitboards.all_pieces) > 32) continue;
+		if (std::popcount(position.player1.bitboards.all_pieces) > 32) continue;
 
 		// Do not store positions if their best move is a capture, since we are only interested in evaluating quiet positions
 		location final_square = notationSquareToLocation(best_move.substr(2, 2));
-		if ((1LL << final_square) & position.opponent.bitboards.friendly_pieces) 
+		if ((1LL << final_square) & position.player2.bitboards.friendly_pieces)
 			continue;
 
 		// Make evaluation relative to side to move
 		int32_t evaluation = std::stoi(eval);
 		if (abs(evaluation) > Max_Eval) evaluation = Max_Eval * ((evaluation < 0) ? -1 : 1);
-		if (!position.player.is_white) evaluation *= -1;
+		if (!position.player1.is_white) evaluation *= -1;
 
-		Player* white = (position.player.is_white) ? &position.player : &position.opponent;
-		Player* black = (!position.player.is_white) ? &position.player : &position.opponent;
+		Player* white = (position.player1.is_white) ? &position.player1 : &position.player2;
+		Player* black = (!position.player1.is_white) ? &position.player1 : &position.player2;
 
 		// Find all squares with pieces on the board
-		std::vector<NNUEIndex> indexes = getIndexesNNUE(position.player, position.opponent);
+		std::vector<NNUEIndex> indexes = getIndexesNNUE(position.player1, position.player2);
 
 		int i = 0;
 		for (auto& [loc_wk, loc_bk] : indexes) {
-			locations_1s_sm[i]  = position.player.is_white ? loc_wk : loc_bk;
-			locations_1s_snm[i] = position.player.is_white ? loc_bk : loc_wk;
+			locations_1s_sm[i] = position.player1.is_white ? loc_wk : loc_bk;
+			locations_1s_snm[i] = position.player1.is_white ? loc_bk : loc_wk;
 			i++;
 		}
 
@@ -104,12 +104,12 @@ int main() {
 
 		if (calculate_loss) {
 			// Compute loss normal evaluation function
-			int ev = Evaluate(position.player, position.opponent, std::popcount(position.player.bitboards.all_pieces));
+			int ev = Evaluate(position.player1, position.player2, std::popcount(position.player1.bitboards.all_pieces));
 			if (abs(ev) > Max_Eval) ev = Max_Eval * ((ev < 0) ? -1 : 1);
 			error += loss(ev, evaluation);
 
 			// Compute loss nnue
-			nnue.setPosition(position.player, position.opponent);
+			nnue.setPosition(position.player1, position.player2);
 			ev = nnue.evaluate();
 			if (abs(ev) > Max_Eval) ev = Max_Eval * ((ev < 0) ? -1 : 1);
 			error_nnue += loss(ev, evaluation);

@@ -4,6 +4,7 @@
 #include "Player.h"
 #include <array>
 #include <climits>
+#include <string>
 
 struct Entry;
 
@@ -77,8 +78,7 @@ public:
 	are defedend or attacks of pinned pieces that would leave the king in check if played */
 	void generateCaptures(Player& player, const Player& opponent);
 
-	unsigned short isMoveLegal (unsigned short move_flag, location start_square, location final_square) const;
-	unsigned short isMoveLegal (location start_square, location final_square) const;
+	unsigned short parseMove(std::string& move_str);
 	bool isMoveLegal (unsigned short move) const;
 
 	void orderMoves(const Player& player, const Player& opponent, const Entry* tt_entry, const std::array<unsigned short, 2>* killer_moves_at_ply);
@@ -106,3 +106,5 @@ inline bool isCapture(unsigned short move, unsigned long long opponent_pieces) {
 PieceType getPieceType(unsigned short move);
 
 bool isPseudoLegal(unsigned short move, const Player& player);
+
+std::string moveToStr(unsigned short move);
