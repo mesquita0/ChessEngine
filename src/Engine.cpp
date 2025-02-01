@@ -61,11 +61,11 @@ void Engine::search(bool print_best_move) {
 			FindBestMoveItrDeepening(fixed_depth, *player, *opponent, hash_positions, position.half_moves, search_result);
 		else
 			FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, position.half_moves, search_result);
-		
+
 		if (print_best_move) {
-		std::cout << "bestmove " << moveToStr(search_result.best_move); 
-		if (search_result.ponder) std::cout << " ponder " << moveToStr(search_result.ponder);
-		std::cout << std::endl;
+			std::cout << "bestmove " << moveToStr(search_result.best_move);
+			if (search_result.ponder) std::cout << " ponder " << moveToStr(search_result.ponder);
+			std::cout << std::endl;
 		}
 	});
 }
@@ -85,12 +85,22 @@ GameOutcome Engine::getGameStatus() {
 
 void Engine::setTimeWhite(int time_remaining_white) {
 	if (player->is_white) {
-		setSearchTime(time_remaining_white / 10);
+		if (position.full_moves < 10)
+			setSearchTime(time_remaining_white / 60);
+		else if (position.full_moves < 30)
+			setSearchTime(time_remaining_white / 10);
+		else
+			setSearchTime(time_remaining_white / 20);
 	}
 }
 
 void Engine::setTimeBlack(int time_remaining_black) {
 	if (!player->is_white) {
-		setSearchTime(time_remaining_black / 10);
+		if (position.full_moves < 10)
+			setSearchTime(time_remaining_black / 60);
+		else if (position.full_moves < 30)
+			setSearchTime(time_remaining_black / 10);
+		else
+			setSearchTime(time_remaining_black / 20);
 	}
 }
