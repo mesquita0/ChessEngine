@@ -50,11 +50,11 @@ void Engine::MakeMove(unsigned short move) {
 	opponent = tmp;
 }
 
-void Engine::search() {
+void Engine::search(bool print_best_move) {
 	if (searcher.joinable()) searcher.join();
 
 	search_id++;
-	searcher = std::thread([&]() {
+	searcher = std::thread([&, print_best_move]() {
 		if (infinite_search)
 			FindBestMoveItrDeepening(9999, *player, *opponent, hash_positions, position.half_moves, search_result);
 		else if (fixed_depth > 0)
@@ -62,9 +62,11 @@ void Engine::search() {
 		else
 			FindBestMoveItrDeepening(search_time, *player, *opponent, hash_positions, position.half_moves, search_result);
 		
+		if (print_best_move) {
 		std::cout << "bestmove " << moveToStr(search_result.best_move); 
 		if (search_result.ponder) std::cout << " ponder " << moveToStr(search_result.ponder);
 		std::cout << std::endl;
+		}
 	});
 }
 

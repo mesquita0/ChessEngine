@@ -88,7 +88,7 @@ Flags process_flags(int argc, char* argv[]) {
 }
 
 int game_mode(Engine& engine, Flags flags) {
-	bool quiet_mode = false;
+	bool quiet_mode = flags.quiet_mode;
 	if (flags.fen.length() == 0) flags.fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 	engine.setDepth(flags.fixed_depth);
@@ -150,7 +150,7 @@ int game_mode(Engine& engine, Flags flags) {
 			}
 		}
 		else {
-			engine.search();
+			engine.search(false);
 			SearchResult search_result = engine.waitSearchResult();
 
 			// Print best move

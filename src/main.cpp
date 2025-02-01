@@ -67,8 +67,14 @@ int main(int argc, char* argv[]) {
 			line >> buffer;
 
 			if (buffer == "fen") {
-				line >> buffer;
-				position = FENToPosition(buffer);
+				std::string fen = "";
+				
+				for (int i = 0; i < 6; i++) {
+					line >> buffer;
+					fen += " " + buffer;
+				}
+				
+				position = FENToPosition(fen);
 			}
 			else if (buffer == "startpos") {
 				position = start_position;

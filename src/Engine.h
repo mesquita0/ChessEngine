@@ -35,7 +35,7 @@ public:
 	void setPosition(const Position& position);
 	void MakeMove(unsigned short move);
 
-	void search();
+	void search(bool print_best_move=true);
 	void stop() const;
 
 	SearchResult waitSearchResult();
