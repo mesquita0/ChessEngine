@@ -49,8 +49,8 @@ struct AttacksInfo {
 */
 class Moves {
 	std::array<unsigned short, max_num_moves> moves = {};
-	std::array<short, max_num_moves> scores = {};
-	int last_score_picked = INT_MAX;
+	alignas(64) unsigned short scores[max_num_moves] = {};
+	int num_moves_left = 0;
 
 public:
 	short num_moves = 0;

@@ -10,6 +10,7 @@
 #include <array>
 #include <bit>
 #include <climits>
+#include <immintrin.h>
 
 constexpr unsigned long long castle_king_side_white_mask = 0b01100000;
 constexpr unsigned long long castle_queen_side_white_pieces_mask = 0b01110;
@@ -18,6 +19,8 @@ constexpr unsigned long long castle_king_side_black_mask = 0b01100000ull << 56;
 constexpr unsigned long long castle_queen_side_black_pieces_mask = 0b01110ull << 56;
 constexpr unsigned long long castle_queen_side_black_attacks_mask = 0b01100ull << 56;
 constexpr std::array<unsigned short, 4> promotions = { promotion_knight, promotion_bishop, promotion_rook, promotion_queen };
+
+constexpr unsigned short max_score_move = USHRT_MAX;
 
 using std::array;
 
@@ -448,128 +451,191 @@ void Moves::orderMoves(const Player& player, const Player& opponent, const Entry
 	unsigned short best_cached_move = tt_entry ? tt_entry->best_move : 0;
 
 	for (int i = 0; i < num_moves; i++) {
-		scores[i] += i; // Ensure that two moves dont have the same scores
+		scores[i] = 1001 + i; // So that every score is greater than 0
 
 		// Make best cached move first and assign maximum score
 		if (moves[i] == best_cached_move) {
 			moves[i] = moves[0];
-			scores[i] = scores[0];
+			scores[i] = scores[0] - (i / 16);
 			
 			moves[0] = best_cached_move;
-			scores[0] = SHRT_MAX;
+			scores[0] = max_score_move;
 			continue;
 		}
 
 		// Score of killer moves
 		if (killer_moves_at_ply && (moves[i] == (*killer_moves_at_ply)[0] || moves[i] == (*killer_moves_at_ply)[1])) {
-			scores[i] += 500;
-			continue;
+			scores[i] += 50;
 		}
 
-		location start_square = getStartSquare(moves[i]);
-		location final_square = getFinalSquare(moves[i]);
-		unsigned long long final_square_bitboard = 1LL << final_square;
-		unsigned short move_flag = getMoveFlag(moves[i]);
+		else {
+			location start_square = getStartSquare(moves[i]);
+			location final_square = getFinalSquare(moves[i]);
+			unsigned long long final_square_bitboard = 1LL << final_square;
+			unsigned short move_flag = getMoveFlag(moves[i]);
 
-		// The switch is a little bit faster than getPieceValue, increases score for promotions
-		int piece_value = 0;
-		PieceType piece_type;
-		switch (move_flag) {
-		case pawn_move:
-			piece_value = 1000;
-			piece_type = Pawn;
-			break;
-		case pawn_move_two_squares:
-			piece_value = 1000;
-			piece_type = Pawn;
-			break;
-		case knight_move:
-			piece_value = 3200;
-			piece_type = Knight;
-			break;
-		case bishop_move:
-			piece_value = 3300;
-			piece_type = Bishop;
-			break;
-		case rook_move:
-			piece_value = 5000;
-			piece_type = Rook;
-			break;
-		case queen_move:
-			piece_value = 9000;
-			piece_type = Queen;
-			break;
-		case king_move:
-			piece_value = 0; // If king caputes then it is a free piece (only considering one move)
-			piece_type = King;
-			break;
-		case castle_king_side:
-			piece_type = King;
-			break;
-		case castle_queen_side:
-			piece_type = King;
-			break;
-		case en_passant:
-			piece_value = 1000;
-			piece_type = Pawn;
-			break;
-		case promotion_knight:
-			piece_value = 3200;
-			piece_type = Pawn;
-			scores[i] += 2200;
-			break;
-		case promotion_bishop:
-			piece_value = 3300;
-			piece_type = Pawn;
-			scores[i] += 2300;
-			break;
-		case promotion_rook:
-			piece_value = 5000;
-			piece_type = Pawn;
-			scores[i] += 4000;
-			break;
-		case promotion_queen:
-			piece_value = 9000;
-			piece_type = Pawn;
-			scores[i] += 8000;
-			break;
-		default:
-			break;
-		}
+			// The switch is a little bit faster than getPieceValue, increases score for promotions
+			int piece_value = 0;
+			PieceType piece_type;
+			switch (move_flag) {
+			case pawn_move:
+				piece_value = 100;
+				piece_type = Pawn;
+				break;
+			case pawn_move_two_squares:
+				piece_value = 100;
+				piece_type = Pawn;
+				break;
+			case knight_move:
+				piece_value = 320;
+				piece_type = Knight;
+				break;
+			case bishop_move:
+				piece_value = 330;
+				piece_type = Bishop;
+				break;
+			case rook_move:
+				piece_value = 500;
+				piece_type = Rook;
+				break;
+			case queen_move:
+				piece_value = 900;
+				piece_type = Queen;
+				break;
+			case king_move:
+				piece_value = 0; // If king caputes then it is a free piece (only considering one move)
+				piece_type = King;
+				break;
+			case castle_king_side:
+				piece_type = King;
+				break;
+			case castle_queen_side:
+				piece_type = King;
+				break;
+			case en_passant:
+				piece_value = 100;
+				piece_type = Pawn;
+				break;
+			case promotion_knight:
+				piece_value = 320;
+				piece_type = Pawn;
+				scores[i] += 220;
+				break;
+			case promotion_bishop:
+				piece_value = 330;
+				piece_type = Pawn;
+				scores[i] += 230;
+				break;
+			case promotion_rook:
+				piece_value = 500;
+				piece_type = Pawn;
+				scores[i] += 400;
+				break;
+			case promotion_queen:
+				piece_value = 900;
+				piece_type = Pawn;
+				scores[i] += 800;
+				break;
+			default:
+				break;
+			}
 
-		// Captures
-		if (final_square_bitboard & opponent.bitboards.friendly_pieces) {
-			scores[i] += 700; // So that equal captures are searched before non-captures 
-			int victim_value = getPieceValue(opponent, final_square);
-			scores[i] += victim_value;
-		}
-		else { // Sort non captures with history heuristic
-			int history_value = history_table.get(player.is_white, piece_type, final_square) * 400; // History values from 0 to 400
-			scores[i] += history_value;
-		}
+			// Captures
+			if (final_square_bitboard & opponent.bitboards.friendly_pieces) {
+				scores[i] += 70; // So that equal captures are searched before non-captures 
+				int victim_value = getPieceValue(opponent, final_square);
+				scores[i] += victim_value;
+			}
+			else { // Sort non captures with history heuristic
+				int history_value = history_table.get(player.is_white, piece_type, final_square) * 40; // History values from 0 to 40
+				scores[i] += history_value;
+			}
 
-		// Moving to a defended square
-		if (final_square_bitboard & opponent.bitboards.attacks) 
-			scores[i] -= piece_value;
+			// Moving to a defended square
+			if (final_square_bitboard & opponent.bitboards.attacks)
+				scores[i] -= piece_value;
+		}
+	
+		//
+		scores[i] = (scores[i] << 3) + 7 - (i / 16);
 	}
+
+	num_moves_left = num_moves;
 }
 
 unsigned short Moves::getNextOrderedMove() {
-	short next_max = SHRT_MIN;
-	int next_max_pos = 0;
-	for (int i = 0; i < num_moves; i++) {
-		if (scores[i] > next_max && scores[i] < last_score_picked) {
-			next_max = scores[i];
-			next_max_pos = i;
-		}
-		if (next_max == SHRT_MAX) break;
+	if (num_moves_left == 0) return 0;
+	num_moves_left--;
+
+	// Return best cached move if it exists
+	if (scores[0] == max_score_move) {
+		scores[0] = 0;
+		return moves[0];
 	}
 
-	// Return 0 if there are no more moves to be searched in the list
-	if (next_max == SHRT_MIN) return 0;
+	__m256i scores_registers[8];
+	
+	scores_registers[0] = _mm256_load_si256((__m256i*) & scores[0]);
+	__m256i max_values;
 
-	last_score_picked = next_max;
-	return moves[next_max_pos];
+	if (num_moves > 16) {
+		int num_registers = (num_moves > 64) ? 8 : ((num_moves > 32) ? 4 : 2);
+
+		for (int i = 1; i < num_registers; i++) 
+			scores_registers[i] = _mm256_load_si256((__m256i*) & scores[i * 16]);
+
+		while (num_registers > 2) {
+			num_registers /= 2;
+
+			for (int i = 0; i < num_registers; i++) {
+				scores_registers[i] = _mm256_max_epu16(scores_registers[2 * i], scores_registers[2 * i + 1]);
+			}
+		}
+
+		max_values = _mm256_max_epu16(scores_registers[0], scores_registers[1]);
+	}
+	else {
+		max_values = scores_registers[0];
+	}
+
+	__m256i max_values_low  = _mm256_cvtepu16_epi32(_mm256_castsi256_si128(max_values));
+	__m256i max_values_high = _mm256_cvtepu16_epi32(_mm256_extracti128_si256(max_values, 1));
+
+	//alignas(64) constexpr int a[16] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+	alignas(64) constexpr int a[16] = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+
+	max_values_low  = _mm256_add_epi32(_mm256_slli_epi32(max_values_low , 4), _mm256_load_si256((__m256i*) a));
+	max_values_high = _mm256_add_epi32(_mm256_slli_epi32(max_values_high, 4), _mm256_load_si256((__m256i*) &a[8]));
+
+	max_values = _mm256_max_epi32(max_values_low, max_values_high);
+	
+	__m128i max_values_lo = _mm256_castsi256_si128(max_values);
+	__m128i max_values_hi = _mm256_extracti128_si256(max_values, 1);
+
+	__m128i max_values_4 = _mm_max_epi32(max_values_lo, max_values_hi);
+	
+	alignas(64) int b[4];
+	_mm_store_si128((__m128i *) b, max_values_4);
+
+	int max_1 = (b[0] > b[1]) ? b[0] : b[1];
+	int max_2 = (b[2] > b[3]) ? b[2] : b[3];
+
+	int max_score = (max_1 > max_2) ? max_1 : max_2;
+	int idx = (~max_score & 0b1111) + (~max_score & 0b1110000);
+
+	if (num_moves > 128) {
+		unsigned short next_max = scores[idx];
+
+		for (int i = 128; i < num_moves; i++) {
+			if (scores[i] > next_max) {
+				next_max = scores[i];
+				idx = i;
+			}
+		}
+	}
+
+	scores[idx] = 0;
+	return moves[idx];
 }
 
 AttacksInfo generateAttacksInfo(bool is_white, const BitBoards& bitboards, unsigned long long all_pieces,
@@ -765,10 +831,10 @@ inline bool canMove(bool is_in_check, location final_square, unsigned long long 
 
 inline int getPieceValue(const Player& player, location square) {
 	unsigned long long bitboard = 1LL << square;
-	if (player.bitboards.pawns & bitboard) return 1000;
-	else if ((player.bitboards.knights & bitboard) || (player.bitboards.bishops & bitboard)) return 3000;
-	else if (player.bitboards.rooks & bitboard) return 5000;
-	return 9000; // Queen
+	if (player.bitboards.pawns & bitboard) return 100;
+	else if ((player.bitboards.knights & bitboard) || (player.bitboards.bishops & bitboard)) return 300;
+	else if (player.bitboards.rooks & bitboard) return 500;
+	return 900; // Queen
 }
 
 void setPins(Player& player, Player& opponent) {
